@@ -7,8 +7,12 @@ const router = express.Router();
 
 // Register a new student
 router.post('/register', async (req, res) => {
+
+    
+
   try {
     const { name, email, password, faculty } = req.body;
+    
 
     // 1. Restrict to Ruhuna emails
     if (!email.endsWith('@eng.ruh.ac.lk') && !email.endsWith('@ruh.ac.lk')) {
