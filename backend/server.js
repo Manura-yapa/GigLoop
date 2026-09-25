@@ -22,6 +22,10 @@ app.use(express.json());
 mongoose.connect(process.env.MONGO_URI, { family: 4 })
   .then(() => console.log('MongoDB connection established successfully'))
   .catch((err) => console.error('MongoDB connection error:', err));
+
+// Routes
+app.use('/api/auth', require('./routes/auth'));
+
 // Test Route
 app.get('/', (req, res) => {
   res.send('GigLoop API is running...');
