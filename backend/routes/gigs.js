@@ -38,4 +38,25 @@ router.get('/all', async (req, res) => {
   }
 });
 
+// Delete a gig (Protected Route)
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const gig = await Gig.findById(req.params.id);
+    
+    if (!gig) {
+      return res.status(404).json({ error: 'Gig not found' });
+    }
+
+    // Verify the user owns this gig
+    if (gig.posterId._id.toString() !== req.user.id) {
+      return res.status(401).json({ error: 'User not authorized to delete this gig' });
+    }
+
+    await gig.deleteOne();
+    res.json({ message: 'Gig deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error while deleting the gig.' });
+  }
+});
+
 module.exports = router;

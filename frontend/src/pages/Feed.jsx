@@ -7,6 +7,7 @@ export default function Feed() {
   const [newGig, setNewGig] = useState({ title: '', description: '', category: '', budget: '', deadline: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const currentUser = JSON.parse(localStorage.getItem('user'));
 
   useEffect(() => {
     // Redirect to login if the user doesn't have a token
@@ -38,6 +39,20 @@ export default function Feed() {
       fetchGigs(); // Instantly refresh the feed to show the new gig
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create gig.');
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this gig?')) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(`http://localhost:5000/api/gigs/${id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      fetchGigs(); // Refresh the list after deletion
+    } catch (err) {
+      alert('Failed to delete gig');
     }
   };
 
@@ -73,9 +88,22 @@ export default function Feed() {
           ) : (
             gigs.map(gig => (
               <div key={gig._id} className="bg-white p-5 rounded shadow border-l-4 border-blue-600">
+                {/* Replace the existing <div className="flex justify-between items-start"> with this: */}
                 <div className="flex justify-between items-start">
-                  <h4 className="font-bold text-lg">{gig.title}</h4>
-                  <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded">Rs {gig.budget}</span>
+                <div>
+                    <h4 className="font-bold text-lg">{gig.title}</h4>
+                    {currentUser?.id === gig.posterId?._id && (
+                    <button 
+                        onClick={() => handleDelete(gig._id)}
+                        className="text-red-500 text-xs font-bold hover:underline mt-1"
+                    >
+                        Delete Gig
+                    </button>
+                    )}
+                </div>
+                <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-200">
+                    Rs {gig.budget}
+                </span>
                 </div>
                 <p className="text-gray-700 mt-2 text-sm">{gig.description}</p>
                 <div className="mt-4 flex justify-between items-center text-xs text-gray-500 border-t pt-3">
