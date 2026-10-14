@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import io from 'socket.io-client';
+import Chat from '../components/Chat';
 
 export default function Feed() {
   const [gigs, setGigs] = useState([]);
@@ -8,6 +10,16 @@ export default function Feed() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const currentUser = JSON.parse(localStorage.getItem('user'));
+
+  const [activeChat, setActiveChat] = useState(null);
+
+  const joinChat = (gig) => {
+    socket.emit('join_room', gig._id);
+    setActiveChat(gig);
+  };
+
+  // Initialize socket outside the component to prevent constant reconnects
+  const socket = io.connect('http://localhost:5000');
 
   useEffect(() => {
     // Redirect to login if the user doesn't have a token
@@ -106,15 +118,38 @@ export default function Feed() {
                 </span>
                 </div>
                 <p className="text-gray-700 mt-2 text-sm">{gig.description}</p>
-                <div className="mt-4 flex justify-between items-center text-xs text-gray-500 border-t pt-3">
+<div className="mt-4 flex justify-between items-center text-xs text-gray-500 border-t pt-3">
                   <span>Posted by: <span className="font-semibold text-gray-800">{gig.posterId?.name}</span> ({gig.posterId?.faculty})</span>
                   <span>Deadline: {new Date(gig.deadline).toLocaleDateString()}</span>
                 </div>
+                
+                {/* NEW: Chat Button */}
+                {currentUser?.id !== gig.posterId?._id && (
+                  <button 
+                    onClick={() => joinChat(gig)}
+                    className="mt-3 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-100 transition w-full text-center"
+                  >
+                    Discuss Details
+                  </button>
+                )}
               </div>
             ))
           )}
         </div>
       </div>
+
+          {/* Active Chat Window */}
+      {activeChat && (
+        <Chat 
+          socket={socket} 
+          username={currentUser?.name?.split(' ')[0] || 'Student'} 
+          room={activeChat._id} 
+          gigTitle={activeChat.title}
+          onClose={() => setActiveChat(null)} 
+        />
+      )}
+   
+
     </div>
   );
 }
