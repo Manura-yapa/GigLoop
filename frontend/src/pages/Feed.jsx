@@ -124,14 +124,14 @@ export default function Feed() {
                 </div>
                 
                 {/* NEW: Chat Button */}
-                {currentUser?.id !== gig.posterId?._id && (
-                  <button 
-                    onClick={() => joinChat(gig)}
-                    className="mt-3 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-100 transition w-full text-center cursor-pointer"
-                  >
-                    {currentUser?.id === gig.posterId?._id ? 'Open Gig Chat Room' : 'Discuss Details'}
-                  </button>
-                )}
+                
+                <button 
+                  onClick={() => joinChat(gig)}
+                  className="mt-3 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-100 transition w-full text-center cursor-pointer"
+                >
+                  {currentUser?.id === gig.posterId?._id ? 'Open Gig Chat Room' : 'Discuss Details'}
+                </button>
+                
               </div>
             ))
           )}

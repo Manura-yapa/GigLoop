@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const dns = require("dns");
 const http = require('http'); // 1. Import http
 const { Server } = require('socket.io'); // 2. Import Socket.io
+const Message = require('./models/Message'); // Import the Message model
 
 dotenv.config();
 
@@ -30,19 +31,35 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/gigs', require('./routes/gigs'));
 
+    app.get('/api/messages/:roomId', async (req, res) => {
+  try {
+    const messages = await Message.find({ room: req.params.roomId }).sort({ createdAt: 1 });
+    res.json(messages);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to load chat history' });
+  }
+});
+
 // 4. Socket.io connection logic
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  // When a user clicks on a gig to chat about it, they join a "room" specific to that gig
   socket.on('join_room', (roomId) => {
     socket.join(roomId);
-    console.log(`User joined room: ${roomId}`);
+    console.log(`User ${socket.id} joined room: ${roomId}`);
   });
 
-  // When a user sends a message, broadcast it only to others in that specific room
-  socket.on('send_message', (data) => {
-    socket.to(data.room).emit('receive_message', data);
+  socket.on('send_message', async (data) => {
+    try {
+      // Save message to MongoDB
+      const newMsg = new Message(data);
+      await newMsg.save();
+      
+      // Broadcast to everyone else in the room
+      socket.to(data.room).emit('receive_message', data);
+    } catch (err) {
+      console.error('Error saving message:', err);
+    }
   });
 
   socket.on('disconnect', () => {
