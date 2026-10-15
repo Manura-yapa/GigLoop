@@ -9,7 +9,7 @@ router.post('/create', auth, async (req, res) => {
     const { title, description, category, budget, deadline } = req.body;
 
     const newGig = new Gig({
-      posterId: req.user.id, // This comes directly from the verified JWT token
+      posterId: req.user.id,
       title,
       description,
       category,
@@ -24,13 +24,12 @@ router.post('/create', auth, async (req, res) => {
   }
 });
 
-// Get all open gigs (Public Route)
+// Get all gigs (Public Route)
 router.get('/all', async (req, res) => {
   try {
-    // Fetches open gigs, newest first, and attaches the poster's name and faculty
-    const gigs = await Gig.find({ status: 'open' })
+    const gigs = await Gig.find()
       .sort({ createdAt: -1 })
-      .populate('posterId', 'name faculty');
+      .populate('posterId', 'name faculty role');
       
     res.json(gigs);
   } catch (error) {
@@ -38,7 +37,29 @@ router.get('/all', async (req, res) => {
   }
 });
 
-// Delete a gig (Protected Route)
+// Update gig status (Creator or Admin)
+router.put('/:id/status', auth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    const gig = await Gig.findById(req.params.id);
+
+    if (!gig) {
+      return res.status(404).json({ error: 'Gig not found' });
+    }
+
+    if (gig.posterId.toString() !== req.user.id && req.user.role !== 'admin') {
+      return res.status(401).json({ error: 'Not authorized to update this gig' });
+    }
+
+    gig.status = status;
+    await gig.save();
+    res.json({ message: 'Gig status updated', gig });
+  } catch (error) {
+    res.status(500).json({ error: 'Server error while updating gig status.' });
+  }
+});
+
+// Delete a gig (Creator or Admin)
 router.delete('/:id', auth, async (req, res) => {
   try {
     const gig = await Gig.findById(req.params.id);
@@ -47,8 +68,8 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ error: 'Gig not found' });
     }
 
-    // Verify the user owns this gig
-    if (gig.posterId._id.toString() !== req.user.id) {
+    // Allow deletion if the user is the creator OR an Admin
+    if (gig.posterId.toString() !== req.user.id && req.user.role !== 'admin') {
       return res.status(401).json({ error: 'User not authorized to delete this gig' });
     }
 

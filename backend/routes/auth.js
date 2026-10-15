@@ -5,18 +5,21 @@ const User = require('../models/User');
 
 const router = express.Router();
 
-// Register a new student
+const isRuhunaEmail = (email) => {
+  return email.endsWith('@eng.ruh.ac.lk') || email.endsWith('@ruh.ac.lk');
+};
+
+// Register User (Freelancer or Customer)
 router.post('/register', async (req, res) => {
-
-    
-
   try {
-    const { name, email, password, faculty } = req.body;
-    
+    const { name, email, password, faculty, role } = req.body;
+    const selectedRole = role || 'customer';
 
-    // 1. Restrict to Ruhuna emails
-    if (!email.endsWith('@eng.ruh.ac.lk') && !email.endsWith('@ruh.ac.lk')) {
-      return res.status(403).json({ error: 'Only University of Ruhuna emails are allowed.' });
+    // 1. If registering as a Freelancer, strictly require Ruhuna email
+    if (selectedRole === 'freelancer' && !isRuhunaEmail(email)) {
+      return res.status(403).json({ 
+        error: 'Freelancers must register with a University of Ruhuna email (@eng.ruh.ac.lk or @ruh.ac.lk).' 
+      });
     }
 
     // 2. Check if user already exists
@@ -29,26 +32,27 @@ router.post('/register', async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 4. Save the user
+    // 4. Save the user (First user or admin@ruh.ac.lk can be made admin easily)
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      faculty
+      role: email === 'admin@eng.ruh.ac.lk' ? 'admin' : selectedRole,
+      faculty: selectedRole === 'freelancer' ? faculty : (faculty || 'Public / External Client')
     });
     
     await newUser.save();
-    res.status(201).json({ message: 'Student registered successfully!' });
+    res.status(201).json({ message: 'Account registered successfully!' });
 
   } catch (error) {
     res.status(500).json({ error: 'Server error during registration.' });
   }
 });
 
-// Login student
+// Login User with Mode Selection
 router.post('/login', async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, loginMode } = req.body;
 
     // 1. Find user
     const user = await User.findOne({ email });
@@ -62,16 +66,33 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Invalid credentials.' });
     }
 
-    // 3. Generate JWT Token
-    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    // 3. Prevent public customers from logging in as Freelancers
+    const canBeFreelancer = user.role === 'freelancer' || user.role === 'admin' || isRuhunaEmail(user.email);
+    if (loginMode === 'freelancer' && !canBeFreelancer) {
+      return res.status(403).json({ 
+        error: 'Only verified University of Ruhuna students can log in as Freelancers. Please select Customer mode.' 
+      });
+    }
+
+    // 4. Generate JWT Token including role
+    const token = jwt.sign(
+      { id: user._id, role: user.role }, 
+      process.env.JWT_SECRET, 
+      { expiresIn: '1d' }
+    );
+
+    const activeMode = loginMode || (user.role === 'freelancer' ? 'freelancer' : 'customer');
 
     res.json({
       token,
+      activeMode,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
-        faculty: user.faculty
+        faculty: user.faculty,
+        role: user.role,
+        canSwitchRole: canBeFreelancer
       }
     });
 
