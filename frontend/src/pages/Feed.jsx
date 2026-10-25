@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import Chat from '../components/Chat';
@@ -32,7 +32,7 @@ export default function Feed() {
 
   const fetchGigs = async () => {
     try {
-      const res = await axios.get('http://localhost:5000/api/gigs/all');
+      const res = await api.get('/gigs/all');
       setGigs(res.data);
     } catch (err) {
       setError('Failed to load gigs.');
@@ -42,11 +42,7 @@ export default function Feed() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('token');
-      // The x-auth-token header bypasses the 401 Unauthorized error you saw in Postman
-      await axios.post('http://localhost:5000/api/gigs/create', newGig, {
-        headers: { 'x-auth-token': token }
-      });
+      await api.post('/gigs/create', newGig);
       setNewGig({ title: '', description: '', category: '', budget: '', deadline: '' });
       fetchGigs(); // Instantly refresh the feed to show the new gig
     } catch (err) {
@@ -58,10 +54,7 @@ export default function Feed() {
     if (!window.confirm('Are you sure you want to delete this gig?')) return;
     
     try {
-      const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/gigs/${id}`, {
-        headers: { 'x-auth-token': token }
-      });
+      await api.delete(`/gigs/${id}`);
       fetchGigs(); // Refresh the list after deletion
     } catch (err) {
       alert('Failed to delete gig');

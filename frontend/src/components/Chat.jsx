@@ -12,7 +12,7 @@ export default function Chat({ socket, username, room, gigTitle, onClose }) {
     // 2. Fetch previous chat history from MongoDB
     const fetchHistory = async () => {
       try {
-        const res = await axios.get(`http://localhost:5000/api/messages/${room}`);
+        const res = await api.get(`/messages/${room}`);
         setMessageList(res.data);
       } catch (err) {
         console.error('Failed to load chat history');
