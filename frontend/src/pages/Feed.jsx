@@ -1,146 +1,408 @@
-import { useState, useEffect, useCallback  } from 'react';
-import api from '../utils/api';
-
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import io from 'socket.io-client';
-import Chat from '../components/Chat';
+import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
+import Chat from '../components/Chat';
+
+const CATEGORIES = [
+  'Web & App Dev',
+  'Design & UI/UX',
+  'Engineering & CAD',
+  'Tutoring & Academics',
+  'Writing & Translation',
+  'Video & Animation'
+];
+
+const EMPTY_FILTERS = {
+  search: '',
+  category: '',
+  status: '',
+  minBudget: '',
+  maxBudget: ''
+};
 
 export default function Feed() {
+  const { user, isAdmin } = useAuth();
+
   const [gigs, setGigs] = useState([]);
-  const [newGig, setNewGig] = useState({ title: '', description: '', category: '', budget: '', deadline: '' });
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
-  const { user: currentUser } = useAuth();
+  const [filterError, setFilterError] = useState('');
+
+  const [draftFilters, setDraftFilters] = useState({
+    ...EMPTY_FILTERS
+  });
+  const [appliedFilters, setAppliedFilters] = useState({
+    ...EMPTY_FILTERS
+  });
+
+  const [deletingId, setDeletingId] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
-
-  const joinChat = (gig) => {
-    socket.emit('join_room', gig._id);
-    setActiveChat(gig);
-  };
-
-  // Initialize socket outside the component to prevent constant reconnects
-  const socket = io.connect('http://localhost:5000');
-
-  
-
-  const fetchGigs = useCallback(async () => {
-    try {
-      const res = await api.get('/gigs/all');
-      setGigs(res.data);
-      setError('');
-    } catch {
-      setError('Failed to load gigs.');
-    }
-  }, []);
+  const [socket] = useState(() =>
+    io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+      autoConnect: false
+    })
+  );
 
   useEffect(() => {
+    socket.connect();
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [socket]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchGigs = async () => {
+      setLoading(true);
+      setError('');
+
+      const params = {};
+
+      for (const [key, value] of Object.entries(appliedFilters)) {
+        if (value !== '') {
+          params[key] = value;
+        }
+      }
+
+      try {
+        const response = await api.get('/gigs/all', {
+          params,
+          signal: controller.signal
+        });
+
+        if (!controller.signal.aborted) {
+          setGigs(response.data);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          setError(
+            err.response?.data?.error || 'Failed to load gigs.'
+          );
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
     fetchGigs();
-  }, [fetchGigs]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+    return () => {
+      controller.abort();
+    };
+  }, [appliedFilters]);
+
+  const handleFilterChange = (event) => {
+    const { name, value } = event.target;
+
+    setDraftFilters((previous) => ({
+      ...previous,
+      [name]: value
+    }));
+  };
+
+  const handleSearch = (event) => {
+    event.preventDefault();
+    setFilterError('');
+
+    const { minBudget, maxBudget } = draftFilters;
+
+    if (
+      minBudget !== '' &&
+      maxBudget !== '' &&
+      Number(minBudget) > Number(maxBudget)
+    ) {
+      setFilterError('Minimum budget cannot exceed maximum budget.');
+      return;
+    }
+
+    setAppliedFilters({
+      ...draftFilters,
+      search: draftFilters.search.trim()
+    });
+  };
+
+  const handleReset = () => {
+    setDraftFilters({ ...EMPTY_FILTERS });
+    setAppliedFilters({ ...EMPTY_FILTERS });
+    setFilterError('');
+  };
+
+  const handleDelete = async (gig) => {
+    if (!window.confirm(`Delete "${gig.title}"?`)) return;
+
+    setDeletingId(gig._id);
+
     try {
-      await api.post('/gigs/create', newGig);
-      setNewGig({ title: '', description: '', category: '', budget: '', deadline: '' });
-      fetchGigs(); // Instantly refresh the feed to show the new gig
+      await api.delete(`/gigs/${gig._id}`);
+
+      setGigs((previous) =>
+        previous.filter((item) => item._id !== gig._id)
+      );
+
+      if (activeChat?._id === gig._id) {
+        setActiveChat(null);
+      }
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create gig.');
+      window.alert(
+        err.response?.data?.error || 'Failed to delete gig.'
+      );
+    } finally {
+      setDeletingId(null);
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this gig?')) return;
-    
-    try {
-      await api.delete(`/gigs/${id}`);
-      fetchGigs(); // Refresh the list after deletion
-    } catch (err) {
-      alert('Failed to delete gig');
-    }
-  };
+  const inputClass =
+    'w-full border border-gray-300 rounded px-3 py-2 text-sm ' +
+    'focus:outline-none focus:ring-2 focus:ring-blue-500';
 
   return (
-    <div className="max-w-5xl mx-auto mt-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-      {/* Create Gig Form */}
-      <div className="md:col-span-1 bg-white p-6 rounded shadow h-fit">
-        <h3 className="font-bold text-lg mb-4">Post a New Gig</h3>
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input type="text" placeholder="Gig Title (e.g., Design triptych stage backdrop)" className="border p-2 rounded text-sm" 
-            value={newGig.title} onChange={e => setNewGig({...newGig, title: e.target.value})} required />
-          <textarea placeholder="Description (e.g., Need a futuristic Roman Colosseum tech hub theme for an upcoming exhibition...)" className="border p-2 rounded text-sm h-24" 
-            value={newGig.description} onChange={e => setNewGig({...newGig, description: e.target.value})} required />
-          <input type="text" placeholder="Category (e.g., Design, Programming)" className="border p-2 rounded text-sm" 
-            value={newGig.category} onChange={e => setNewGig({...newGig, category: e.target.value})} required />
-          <input type="number" placeholder="Budget (LKR)" className="border p-2 rounded text-sm" 
-            value={newGig.budget} onChange={e => setNewGig({...newGig, budget: e.target.value})} required />
-          <input type="date" className="border p-2 rounded text-sm" 
-            value={newGig.deadline} onChange={e => setNewGig({...newGig, deadline: e.target.value})} required />
-          <button type="submit" className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-bold transition">
-            Post Gig
-          </button>
-        </form>
-      </div>
-      
-      {/* Gig Feed */}
-      <div className="md:col-span-2">
-        <h3 className="font-bold text-xl mb-4">Recent Gigs</h3>
-        <div className="flex flex-col gap-4">
-          {gigs.length === 0 ? (
-            <p className="text-gray-500">No gigs posted yet. Be the first!</p>
-          ) : (
-            gigs.map(gig => (
-              <div key={gig._id} className="bg-white p-5 rounded shadow border-l-4 border-blue-600">
-                {/* Replace the existing <div className="flex justify-between items-start"> with this: */}
-                <div className="flex justify-between items-start">
-                <div>
-                    <h4 className="font-bold text-lg">{gig.title}</h4>
-                    {currentUser?.id === gig.posterId?._id && (
-                    <button 
-                        onClick={() => handleDelete(gig._id)}
-                        className="text-red-500 text-xs font-bold hover:underline mt-1"
-                    >
-                        Delete Gig
-                    </button>
-                    )}
-                </div>
-                <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded border border-green-200">
-                    Rs {gig.budget}
-                </span>
-                </div>
-                <p className="text-gray-700 mt-2 text-sm">{gig.description}</p>
-<div className="mt-4 flex justify-between items-center text-xs text-gray-500 border-t pt-3">
-                  <span>Posted by: <span className="font-semibold text-gray-800">{gig.posterId?.name}</span> ({gig.posterId?.faculty})</span>
-                  <span>Deadline: {new Date(gig.deadline).toLocaleDateString()}</span>
-                </div>
-                
-                {/* NEW: Chat Button */}
-                
-                <button 
-                  onClick={() => joinChat(gig)}
-                  className="mt-3 bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-100 transition w-full text-center cursor-pointer"
-                >
-                  {currentUser?.id === gig.posterId?._id ? 'Open Gig Chat Room' : 'Discuss Details'}
-                </button>
-                
-              </div>
-            ))
-          )}
+    <div className="max-w-5xl mx-auto mt-6 space-y-6">
+      <div className="flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold">Explore gigs</h1>
+          <p className="text-sm text-gray-600 mt-1">
+            Find projects by skill, category, status, or budget.
+          </p>
         </div>
+
+        <Link
+          to="/post-gig"
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          + Post a gig
+        </Link>
       </div>
 
-          {/* Active Chat Window */}
-      {activeChat && (
-        <Chat 
-          socket={socket} 
-          username={currentUser?.name?.split(' ')[0] || 'Student'} 
-          room={activeChat._id} 
+      <form
+        onSubmit={handleSearch}
+        className="bg-white p-5 rounded-lg shadow space-y-4"
+      >
+        <div>
+          <label htmlFor="search" className="block text-sm font-medium mb-1">
+            Search
+          </label>
+          <input
+            id="search"
+            name="search"
+            placeholder="Search titles, descriptions, or skills..."
+            maxLength={100}
+            value={draftFilters.search}
+            onChange={handleFilterChange}
+            className={inputClass}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium mb-1">
+              Category
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={draftFilters.category}
+              onChange={handleFilterChange}
+              className={inputClass}
+            >
+              <option value="">All categories</option>
+              {CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium mb-1">
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              value={draftFilters.status}
+              onChange={handleFilterChange}
+              className={inputClass}
+            >
+              <option value="">All statuses</option>
+              <option value="open">Open</option>
+              <option value="in progress">In progress</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="minBudget" className="block text-sm font-medium mb-1">
+              Minimum budget (LKR)
+            </label>
+            <input
+              id="minBudget"
+              name="minBudget"
+              type="number"
+              min="0"
+              step="0.01"
+              value={draftFilters.minBudget}
+              onChange={handleFilterChange}
+              className={inputClass}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="maxBudget" className="block text-sm font-medium mb-1">
+              Maximum budget (LKR)
+            </label>
+            <input
+              id="maxBudget"
+              name="maxBudget"
+              type="number"
+              min="0"
+              step="0.01"
+              value={draftFilters.maxBudget}
+              onChange={handleFilterChange}
+              className={inputClass}
+            />
+          </div>
+        </div>
+
+        {filterError && (
+          <p role="alert" className="text-sm text-red-600">
+            {filterError}
+          </p>
+        )}
+
+        <div className="flex gap-3">
+          <button
+            type="submit"
+            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+          >
+            Search
+          </button>
+
+          <button
+            type="button"
+            onClick={handleReset}
+            className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
+          >
+            Reset
+          </button>
+        </div>
+      </form>
+
+      {loading ? (
+        <p role="status" className="text-gray-600">Loading gigs...</p>
+      ) : error ? (
+        <div role="alert" className="bg-red-50 p-4 rounded">
+          <p className="text-red-700">{error}</p>
+          <button
+            onClick={() => setAppliedFilters({ ...appliedFilters })}
+            className="mt-2 text-blue-700 underline"
+          >
+            Retry
+          </button>
+        </div>
+      ) : gigs.length === 0 ? (
+        <div className="bg-white p-8 rounded-lg text-center text-gray-600">
+          No gigs found. Try changing your filters or post a new gig.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500">
+            {gigs.length} gig{gigs.length === 1 ? '' : 's'} found
+          </p>
+
+          {gigs.map((gig) => {
+            const isOwner = user.id === gig.posterId?._id;
+            const canDelete = isOwner || isAdmin;
+
+            return (
+              <article
+                key={gig._id}
+                className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-600"
+              >
+                <div className="flex flex-wrap justify-between items-start gap-3">
+                  <div>
+                    <h2 className="text-lg font-bold">{gig.title}</h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {gig.category}
+                    </p>
+                  </div>
+
+                  <span className="font-bold text-green-700">
+                    LKR {Number(gig.budget).toLocaleString()}
+                  </span>
+                </div>
+
+                <p className="text-gray-700 mt-3 whitespace-pre-wrap">
+                  {gig.description}
+                </p>
+
+                {(gig.skillsRequired || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {gig.skillsRequired.map((skill, index) => (
+                      <span
+                        key={`${skill}-${index}`}
+                        className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-4 border-t pt-3">
+                  <span>
+                    Posted by: {gig.posterId?.name || 'Unavailable user'}
+                  </span>
+                  <span>
+                    Deadline: {new Date(gig.deadline).toLocaleDateString()}
+                  </span>
+                  <span className="capitalize">
+                    Status: {gig.status}
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mt-4">
+                  <button
+                    onClick={() => setActiveChat(gig)}
+                    disabled={!socket}
+                    className="bg-blue-50 text-blue-700 px-3 py-2 rounded text-sm disabled:opacity-50"
+                  >
+                    {isOwner ? 'Open gig chat' : 'Discuss details'}
+                  </button>
+
+                  {canDelete && (
+                    <button
+                      onClick={() => handleDelete(gig)}
+                      disabled={deletingId !== null}
+                      className="text-red-600 px-3 py-2 rounded text-sm hover:bg-red-50 disabled:opacity-50"
+                    >
+                      {deletingId === gig._id ? 'Deleting...' : 'Delete gig'}
+                    </button>
+                  )}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {activeChat && socket && (
+        <Chat
+          key={activeChat._id}
+          socket={socket}
+          username={user.name?.split(' ')[0] || 'User'}
+          room={activeChat._id}
           gigTitle={activeChat.title}
-          onClose={() => setActiveChat(null)} 
+          onClose={() => setActiveChat(null)}
         />
       )}
-   
-
     </div>
   );
 }
