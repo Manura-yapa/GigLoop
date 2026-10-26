@@ -1,16 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback  } from 'react';
 import api from '../utils/api';
-import { useNavigate } from 'react-router-dom';
+
 import io from 'socket.io-client';
 import Chat from '../components/Chat';
+import { useAuth } from '../context/AuthContext';
 
 export default function Feed() {
   const [gigs, setGigs] = useState([]);
   const [newGig, setNewGig] = useState({ title: '', description: '', category: '', budget: '', deadline: '' });
   const [error, setError] = useState('');
-  const navigate = useNavigate();
-  const currentUser = JSON.parse(localStorage.getItem('user'));
-
+  
+  const { user: currentUser } = useAuth();
   const [activeChat, setActiveChat] = useState(null);
 
   const joinChat = (gig) => {
@@ -21,23 +21,21 @@ export default function Feed() {
   // Initialize socket outside the component to prevent constant reconnects
   const socket = io.connect('http://localhost:5000');
 
-  useEffect(() => {
-    // Redirect to login if the user doesn't have a token
-    if (!localStorage.getItem('token')) {
-      navigate('/login');
-    } else {
-      fetchGigs();
-    }
-  }, [navigate]);
+  
 
-  const fetchGigs = async () => {
+  const fetchGigs = useCallback(async () => {
     try {
       const res = await api.get('/gigs/all');
       setGigs(res.data);
-    } catch (err) {
+      setError('');
+    } catch {
       setError('Failed to load gigs.');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchGigs();
+  }, [fetchGigs]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

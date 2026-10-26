@@ -1,24 +1,24 @@
 import { useState } from 'react';
-import api from '../utils/api';
+import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
     try {
-      const res = await api.post('/auth/login', formData);
-      // Save token and user data to local storage
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
-      
-      // Redirect to feed
-      navigate('/');
+      await login(formData.email, formData.password);
+      navigate('/', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(
+        err.response?.data?.error || 'Login failed. Please try again.'
+      );
     }
   };
 
