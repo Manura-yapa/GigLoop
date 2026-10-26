@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const auth = require('../middleware/auth');
 const Gig = require('../models/Gig');
+const Application = require('../models/Application');
 
 const router = express.Router();
 
@@ -333,31 +334,40 @@ router.delete('/:id', auth, async (req, res) => {
   }
 
   try {
-    const gig = await Gig.findById(req.params.id);
+    await mongoose.connection.transaction(async (session) => {
+      const gig = await Gig.findById(req.params.id).session(session);
 
-    if (!gig) {
-      return res.status(404).json({
-        error: 'Gig not found.'
-      });
-    }
+      if (!gig) {
+        const error = new Error('Gig not found.');
+        error.status = 404;
+        throw error;
+      }
 
-    const isOwner = gig.posterId.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
+      const isOwner = gig.posterId.toString() === req.user.id;
+      const isAdmin = req.user.role === 'admin';
 
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        error: 'Not authorized to delete this gig.'
-      });
-    }
+      if (!isOwner && !isAdmin) {
+        const error = new Error('Not authorized to delete this gig.');
+        error.status = 403;
+        throw error;
+      }
 
-    await gig.deleteOne();
+      await Gig.deleteOne({ _id: gig._id }, { session });
+
+      await Application.deleteMany(
+        { gigId: gig._id },
+        { session }
+      );
+    });
 
     return res.json({
-      message: 'Gig deleted successfully.'
+      message: 'Gig and associated applications deleted successfully.'
     });
   } catch (error) {
-    return res.status(500).json({
-      error: 'Server error while deleting the gig.'
+    return res.status(error.status || 500).json({
+      error: error.status
+        ? error.message
+        : 'Server error while deleting the gig.'
     });
   }
 });

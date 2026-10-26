@@ -30,6 +30,7 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/gigs', require('./routes/gigs'));
+app.use('/api/applications', require('./routes/applications'));
 
     app.get('/api/messages/:roomId', async (req, res) => {
   try {
