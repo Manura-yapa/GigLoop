@@ -13,6 +13,8 @@ import Feed from './pages/Feed';
 import Navbar from './components/Navbar';
 import PostGig from './pages/PostGig';
 
+import Dashboard from './pages/Dashboard';
+
 function App() {
   return (
     <AuthProvider>
@@ -35,6 +37,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <PostGig />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
                   </ProtectedRoute>
                 }
               />

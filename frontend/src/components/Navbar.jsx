@@ -53,6 +53,10 @@ export default function Navbar() {
                 Post Gig
               </Link>
 
+              <Link to="/dashboard" className="hover:underline">
+                Dashboard
+              </Link>
+
               <span className="text-blue-100 capitalize">
                 {user.activeRole} mode
               </span>
