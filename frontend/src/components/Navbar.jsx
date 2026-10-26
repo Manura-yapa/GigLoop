@@ -57,6 +57,10 @@ export default function Navbar() {
                 Dashboard
               </Link>
 
+              <Link to="/profile" className="hover:underline">
+                My profile
+              </Link>
+
               <span className="text-blue-100 capitalize">
                 {user.activeRole} mode
               </span>

@@ -15,6 +15,8 @@ import PostGig from './pages/PostGig';
 
 import Dashboard from './pages/Dashboard';
 
+import Profile from './pages/Profile';
+
 function App() {
   return (
     <AuthProvider>
@@ -46,6 +48,15 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
                   </ProtectedRoute>
                 }
               />
