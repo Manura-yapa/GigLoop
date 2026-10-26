@@ -4,6 +4,7 @@ import io from 'socket.io-client';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Chat from '../components/Chat';
+import ApplicationModal from '../components/ApplicationModal';
 
 const CATEGORIES = [
   'Web & App Dev',
@@ -24,6 +25,10 @@ const EMPTY_FILTERS = {
 
 export default function Feed() {
   const { user, isAdmin } = useAuth();
+
+  const [applyingGig, setApplyingGig] = useState(null);
+  const [applicationNotice, setApplicationNotice] = useState('');
+  const [submittedGigIds, setSubmittedGigIds] = useState([]);
 
   const [gigs, setGigs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +101,22 @@ export default function Feed() {
       controller.abort();
     };
   }, [appliedFilters]);
+
+  const handleApplicationSubmitted = (application) => {
+    const gigId = application.gigId;
+
+    setSubmittedGigIds((previous) =>
+      previous.includes(gigId)
+        ? previous
+        : [...previous, gigId]
+    );
+
+    setApplyingGig(null);
+    setApplicationNotice('Your proposal was submitted successfully.');
+
+    // Reload using the current filters to get the saved application count.
+    setAppliedFilters((previous) => ({ ...previous }));
+  };
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
@@ -277,6 +298,25 @@ export default function Feed() {
           </p>
         )}
 
+
+        {applicationNotice && (
+          <div
+            role="status"
+            className="flex justify-between items-center gap-3 bg-green-50 text-green-800 p-4 rounded-lg"
+          >
+            <p>{applicationNotice}</p>
+
+            <button
+              type="button"
+              onClick={() => setApplicationNotice('')}
+              aria-label="Dismiss success message"
+              className="font-bold"
+            >
+              ×
+            </button>
+          </div>
+         )}
+
         <div className="flex gap-3">
           <button
             type="submit"
@@ -320,6 +360,15 @@ export default function Feed() {
           {gigs.map((gig) => {
             const isOwner = user.id === gig.posterId?._id;
             const canDelete = isOwner || isAdmin;
+
+            const canApply =
+              user.userType === 'student' &&
+              user.activeRole === 'freelancer' &&
+              gig.status === 'open' &&
+              Boolean(gig.posterId?._id) &&
+              !isOwner;
+
+            const submittedHere = submittedGigIds.includes(gig._id);
 
             return (
               <article
@@ -366,9 +415,32 @@ export default function Feed() {
                   <span className="capitalize">
                     Status: {gig.status}
                   </span>
+
+                  <span>
+                    Applications: {gig.applicationsCount ?? 0}
+                  </span>
+
                 </div>
 
                 <div className="flex flex-wrap gap-3 mt-4">
+
+                  {canApply && (
+                    <button
+                      type="button"
+                      disabled={submittedHere}
+                      onClick={() => {
+                        setApplicationNotice('');
+                        setActiveChat(null);
+                        setApplyingGig(gig);
+                      }}
+                      className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      {submittedHere ? 'Proposal submitted' : 'Apply'}
+                    </button>
+                  )}
+
+
+
                   <button
                     onClick={() => setActiveChat(gig)}
                     disabled={!socket}
@@ -392,6 +464,17 @@ export default function Feed() {
           })}
         </div>
       )}
+
+      
+
+        {applyingGig && (
+          <ApplicationModal
+            key={applyingGig._id}
+            gig={applyingGig}
+            onClose={() => setApplyingGig(null)}
+            onSubmitted={handleApplicationSubmitted}
+          />
+        )}
 
       {activeChat && socket && (
         <Chat
