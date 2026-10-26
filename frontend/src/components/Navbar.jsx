@@ -1,13 +1,34 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, switchRole } = useAuth();
+  const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState('');
   const navigate = useNavigate();
 
   const handleLogout = () => {
     logout();
     navigate('/login', { replace: true });
+  };
+
+  const handleSwitchRole = async () => {
+    const targetRole =
+      user.activeRole === 'freelancer' ? 'customer' : 'freelancer';
+
+    setSwitching(true);
+    setSwitchError('');
+
+    try {
+      await switchRole(targetRole);
+    } catch (err) {
+      setSwitchError(
+        err.response?.data?.error || 'Unable to switch mode.'
+      );
+    } finally {
+      setSwitching(false);
+    }
   };
 
   return (
@@ -27,6 +48,32 @@ export default function Navbar() {
               <Link to="/" className="hover:text-blue-200">
                 Feed
               </Link>
+
+              <span className="text-blue-100 capitalize">
+                {user.activeRole} mode
+              </span>
+
+              {user.canSwitchRole && (
+                <button
+                  onClick={handleSwitchRole}
+                  disabled={switching}
+                  className="bg-white text-blue-700 px-3 py-2 rounded hover:bg-blue-50 disabled:opacity-50"
+                >
+                  {switching
+                    ? 'Switching...'
+                    : `Switch to ${
+                        user.activeRole === 'freelancer'
+                          ? 'Customer'
+                          : 'Freelancer'
+                      }`}
+                </button>
+              )}
+
+              {switchError && (
+                <span role="alert" className="text-yellow-200">
+                  {switchError}
+                </span>
+              )}
 
               <button
                 onClick={handleLogout}
