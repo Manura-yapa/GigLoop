@@ -279,48 +279,119 @@ router.get('/:id', async (req, res) => {
 // Preserve owner/admin status updates.
 // Detailed hiring transitions will be added in Step 10.
 router.put('/:id/status', auth, async (req, res) => {
-  if (!validId(req.params.id)) {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!mongoose.isObjectIdOrHexString(id)) {
+    return res.status(400).json({ error: 'Invalid gig ID.' });
+  }
+
+  if (!['completed', 'cancelled'].includes(status)) {
     return res.status(400).json({
-      error: 'Invalid gig ID.'
+      error:
+        'Choose completed or cancelled. Accept a proposal to start a gig.',
     });
   }
 
-  const { status } = req.body || {};
-
-  if (!STATUSES.includes(status)) {
-    return res.status(400).json({
-      error: 'Invalid gig status.'
-    });
-  }
+  // Local helper for transaction errors.
+  const rejectRequest = (httpStatus, message) => {
+    const error = new Error(message);
+    error.status = httpStatus;
+    throw error;
+  };
 
   try {
-    const gig = await Gig.findById(req.params.id);
+    const updatedGig = await mongoose.connection.transaction(
+      async (session) => {
+        const gig = await Gig.findById(id).session(session);
 
-    if (!gig) {
-      return res.status(404).json({
-        error: 'Gig not found.'
-      });
-    }
+        if (!gig) {
+          rejectRequest(404, 'Gig not found.');
+        }
 
-    const isOwner = gig.posterId.toString() === req.user.id;
-    const isAdmin = req.user.role === 'admin';
+        const isOwner = String(gig.posterId) === req.user.id;
+        const isAdmin = req.user.role === 'admin';
 
-    if (!isOwner && !isAdmin) {
-      return res.status(403).json({
-        error: 'Not authorized to update this gig.'
-      });
-    }
+        if (!isOwner && !isAdmin) {
+          rejectRequest(
+            403,
+            'Only the gig owner or an admin can change its status.'
+          );
+        }
 
-    gig.status = status;
-    await gig.save();
+        const allowedTransitions = {
+          open: ['cancelled'],
+          'in progress': ['completed', 'cancelled'],
+          completed: [],
+          cancelled: [],
+        };
+
+        const allowed = allowedTransitions[gig.status] || [];
+
+        if (!allowed.includes(status)) {
+          rejectRequest(
+            409,
+            `Cannot change a ${gig.status} gig to ${status}.`
+          );
+        }
+
+        if (status === 'completed' && !gig.assignedFreelancer) {
+          rejectRequest(
+            409,
+            'A gig must have an assigned freelancer before completion.'
+          );
+        }
+
+        const updated = await Gig.findOneAndUpdate(
+          {
+            _id: gig._id,
+            status: gig.status,
+          },
+          {
+            $set: { status },
+            $inc: { __v: 1 },
+          },
+          {
+            new: true,
+            runValidators: true,
+            session,
+          }
+        );
+
+        if (!updated) {
+          rejectRequest(409, 'The gig changed. Refresh and try again.');
+        }
+
+        if (status === 'cancelled') {
+          await Application.updateMany(
+            {
+              gigId: gig._id,
+              status: 'pending',
+            },
+            {
+              $set: { status: 'rejected' },
+            },
+            { session }
+          );
+        }
+
+        return updated;
+      }
+    );
 
     return res.json({
-      message: 'Gig status updated.',
-      gig
+      message: `Gig ${status} successfully.`,
+      gig: updatedGig,
     });
   } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ error: error.message });
+    }
+
+    console.error('Gig status update failed:', error.name);
+
     return res.status(500).json({
-      error: 'Server error while updating gig status.'
+      error: 'Failed to update gig status.',
     });
   }
 });
