@@ -11,6 +11,7 @@ import Register from './pages/Register';
 import Login from './pages/Login';
 import Feed from './pages/Feed';
 import Navbar from './components/Navbar';
+import PostGig from './pages/PostGig';
 
 function App() {
   return (
@@ -26,6 +27,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Feed />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/post-gig"
+                element={
+                  <ProtectedRoute>
+                    <PostGig />
                   </ProtectedRoute>
                 }
               />

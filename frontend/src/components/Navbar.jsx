@@ -49,6 +49,10 @@ export default function Navbar() {
                 Feed
               </Link>
 
+              <Link to="/post-gig" className="hover:text-blue-200">
+                Post Gig
+              </Link>
+
               <span className="text-blue-100 capitalize">
                 {user.activeRole} mode
               </span>
