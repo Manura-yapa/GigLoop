@@ -42,7 +42,9 @@ router.post('/register', async (req, res) => {
       password,
       faculty,
       role,
-      userType
+      userType,
+      studentId,
+      skills
     } = req.body || {};
 
     if (
@@ -107,6 +109,51 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    let cleanStudentId = '';
+    let cleanSkills = [];
+
+    if (selectedType === 'student') {
+      if (studentId !== undefined) {
+        if (typeof studentId !== 'string' || studentId.length > 50) {
+          return res.status(400).json({
+            error: 'Student ID must be text of at most 50 characters.'
+          });
+        }
+
+        cleanStudentId = studentId.trim();
+      }
+
+      if (skills !== undefined) {
+        let values;
+
+        if (typeof skills === 'string') {
+          values = skills.split(',');
+        } else if (
+          Array.isArray(skills) &&
+          skills.every((skill) => typeof skill === 'string')
+        ) {
+          values = skills;
+        } else {
+          return res.status(400).json({
+            error: 'Skills must be text or an array of strings.'
+          });
+        }
+
+        cleanSkills = [
+          ...new Set(values.map((skill) => skill.trim()).filter(Boolean))
+        ];
+
+        if (
+          cleanSkills.length > 20 ||
+          cleanSkills.some((skill) => skill.length > 50)
+        ) {
+          return res.status(400).json({
+            error: 'Use at most 20 skills, each at most 50 characters.'
+          });
+        }
+      }
+    }
+
     const existingUser = await User.findOne({ email: cleanEmail });
 
     if (existingUser) {
@@ -125,11 +172,14 @@ router.post('/register', async (req, res) => {
       userType: selectedType,
       activeRole: selectedRole,
       faculty:
-        faculty?.trim() ||
-        (selectedType === 'student' ? '' : 'Public / External Client'),
+        selectedType === 'student'
+          ? (faculty?.trim() || '')
+          : 'Public / External Client',
+      studentId: cleanStudentId,
+      skills: cleanSkills,
       isVerifiedStudent: false,
       isBanned: false
-    });
+    }); 
 
     return res.status(201).json({
       message: 'Account registered successfully!',
