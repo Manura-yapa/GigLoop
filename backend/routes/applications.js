@@ -272,4 +272,121 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// Accept or reject a pending proposal.
+// Authentication is already applied by router.use(auth).
+router.put('/:id/status', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (!validId(id)) {
+    return res.status(400).json({ error: 'Invalid application ID.' });
+  }
+
+  if (!['accepted', 'rejected'].includes(status)) {
+    return res.status(400).json({
+      error: 'Status must be accepted or rejected.',
+    });
+  }
+
+  try {
+    const result = await mongoose.connection.transaction(async (session) => {
+      const application = await Application.findById(id).session(session);
+
+      if (!application) {
+        fail(404, 'Application not found.');
+      }
+
+      const gig = await Gig.findById(application.gigId).session(session);
+
+      if (!gig) {
+        fail(404, 'Gig not found.');
+      }
+
+      const isOwner = String(gig.posterId) === req.user.id;
+      const isAdmin = req.user.role === 'admin';
+
+      if (!isOwner && !isAdmin) {
+        fail(403, 'Only the gig owner or an admin can manage proposals.');
+      }
+
+      if (application.status !== 'pending') {
+        fail(409, 'Only pending proposals can be accepted or rejected.');
+      }
+
+      if (gig.status !== 'open' || gig.assignedFreelancer) {
+        fail(409, 'This gig is no longer available for hiring.');
+      }
+
+      if (
+        status === 'accepted' &&
+        String(application.applicantId) === String(gig.posterId)
+      ) {
+        fail(409, 'You cannot hire yourself for your own gig.');
+      }
+
+      // Both decisions write to the gig so concurrent hiring,
+      // cancellation, and deletion cannot silently bypass each other.
+      const gigUpdate =
+        status === 'accepted'
+          ? {
+              $set: {
+                status: 'in progress',
+                assignedFreelancer: application.applicantId,
+              },
+              $inc: { __v: 1 },
+            }
+          : {
+              $inc: { __v: 1 },
+            };
+
+      const updatedGig = await Gig.findOneAndUpdate(
+        {
+          _id: gig._id,
+          status: 'open',
+          assignedFreelancer: null,
+        },
+        gigUpdate,
+        {
+          new: true,
+          runValidators: true,
+          session,
+        }
+      );
+
+      if (!updatedGig) {
+        fail(409, 'The gig changed. Refresh and try again.');
+      }
+
+      application.status = status;
+      await application.save({ session });
+
+      if (status === 'accepted') {
+        await Application.updateMany(
+          {
+            gigId: gig._id,
+            _id: { $ne: application._id },
+            status: 'pending',
+          },
+          {
+            $set: { status: 'rejected' },
+          },
+          { session }
+        );
+      }
+
+      return {
+        application,
+        gig: updatedGig,
+      };
+    });
+
+    return res.json({
+      message: `Application ${status} successfully.`,
+      ...result,
+    });
+  } catch (error) {
+    return handleError(res, error);
+  }
+});
+
 module.exports = router;
