@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import UserReviews from '../components/UserReviews';
 
 export default function Profile() {
   const { user, updateProfile } = useAuth();
@@ -208,6 +209,9 @@ export default function Profile() {
           </button>
         </fieldset>
       </form>
+
+        <UserReviews key={user.id} userId={user.id} />
+
     </div>
   );
 }
