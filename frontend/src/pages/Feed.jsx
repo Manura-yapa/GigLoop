@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import io from 'socket.io-client';
+// import io from 'socket.io-client';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Chat from '../components/Chat';
@@ -44,19 +44,19 @@ export default function Feed() {
 
   const [deletingId, setDeletingId] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
-  const [socket] = useState(() =>
-    io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
-      autoConnect: false
-    })
-  );
+  // const [socket] = useState(() =>
+  //   io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+  //     autoConnect: false
+  //   })
+  // );
 
-  useEffect(() => {
-    socket.connect();
+  // useEffect(() => {
+  //   socket.connect();
 
-    return () => {
-      socket.disconnect();
-    };
-  }, [socket]);
+  //   return () => {
+  //     socket.disconnect();
+  //   };
+  // }, [socket]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -360,6 +360,7 @@ export default function Feed() {
           {gigs.map((gig) => {
             const isOwner = user.id === gig.posterId?._id;
             const canDelete = isOwner || isAdmin;
+            const canDiscuss = isOwner || user.userType === 'student';
 
             const canApply =
               user.userType === 'student' &&
@@ -441,15 +442,20 @@ export default function Feed() {
 
 
 
-                  <button
-                    onClick={() => setActiveChat(gig)}
-                    disabled={!socket}
-                    className="bg-blue-50 text-blue-700 px-3 py-2 rounded text-sm disabled:opacity-50"
-                  >
-                    {isOwner ? 'Open gig chat' : 'Discuss details'}
-                  </button>
+                  {canDiscuss && (
+                    <button
+                      type="button"
+                      onClick={() => setActiveChat(gig)}
+                      className="rounded bg-blue-50 px-3 py-2 text-sm text-blue-700"
+                    >
+                      {isOwner ? 'Student conversations' : 'Discuss privately'}
+                    </button>
+                  )}
 
                   {canDelete && (
+
+                    
+
                     <button
                       onClick={() => handleDelete(gig)}
                       disabled={deletingId !== null}
@@ -458,9 +464,16 @@ export default function Feed() {
                       {deletingId === gig._id ? 'Deleting...' : 'Delete gig'}
                     </button>
                   )}
+
+                  
+
+
                 </div>
               </article>
             );
+
+            
+
           })}
         </div>
       )}
@@ -476,16 +489,13 @@ export default function Feed() {
           />
         )}
 
-      {activeChat && socket && (
-        <Chat
-          key={activeChat._id}
-          socket={socket}
-          username={user.name?.split(' ')[0] || 'User'}
-          room={activeChat._id}
-          gigTitle={activeChat.title}
-          onClose={() => setActiveChat(null)}
-        />
-      )}
+      {activeChat && (
+      <Chat
+        key={activeChat._id}
+        gig={activeChat}
+        onClose={() => setActiveChat(null)}
+      />
+)}
     </div>
   );
 }
