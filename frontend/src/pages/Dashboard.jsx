@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
+import GigReview from '../components/GigReview';
 
 const buttonClass =
   'rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50';
@@ -300,6 +301,9 @@ export default function Dashboard() {
                 </button>
               )}
 
+
+
+
               {['open', 'in progress'].includes(gig.status) && (
                 <button
                   type="button"
@@ -395,6 +399,15 @@ export default function Dashboard() {
                 )}
               </div>
             )}
+
+            {gig.status === 'completed' && gig.assignedFreelancer && (
+                <GigReview
+                    key={`${gig._id}-${reloadKey}`}
+                    gigId={gig._id}
+                />
+                )}
+
+
           </article>
         ))}
       </section>
@@ -448,7 +461,20 @@ export default function Dashboard() {
               >
                 Withdraw proposal
               </button>
+
+                
+
             )}
+
+            {application.status === 'accepted' &&
+                application.gigId?.status === 'completed' && (
+                    <GigReview
+                    key={`${application.gigId._id}-${reloadKey}`}
+                    gigId={application.gigId._id}
+                    />
+                )}
+
+
           </article>
         ))}
       </section>
