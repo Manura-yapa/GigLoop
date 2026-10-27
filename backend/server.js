@@ -32,6 +32,7 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/gigs', require('./routes/gigs'));
 app.use('/api/applications', require('./routes/applications'));
 app.use('/api/reviews', require('./routes/reviews'));
+app.use('/api/admin', require('./routes/admin'));
 
 
     app.get('/api/messages/:roomId', async (req, res) => {
