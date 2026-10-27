@@ -17,6 +17,9 @@ import Dashboard from './pages/Dashboard';
 
 import Profile from './pages/Profile';
 
+import AdminRoute from './components/AdminRoute';
+import AdminDashboard from './pages/AdminDashboard';
+
 function App() {
   return (
     <AuthProvider>
@@ -60,6 +63,17 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+
+
+              <Route
+                path="/admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboard />
+                  </AdminRoute>
+                }
+              />
+
 
               <Route path="/register" element={<Register />} />
               <Route path="/login" element={<Login />} />

@@ -65,6 +65,15 @@ export default function Navbar() {
                 {user.activeRole} mode
               </span>
 
+
+              {user?.role === 'admin' && (
+                <Link to="/admin" className="hover:underline">
+                  Admin dashboard
+                </Link>
+              )}
+
+
+
               {user.canSwitchRole && (
                 <button
                   onClick={handleSwitchRole}
