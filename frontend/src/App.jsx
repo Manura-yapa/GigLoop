@@ -24,10 +24,10 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-gray-50 text-gray-900 font-sans">
+        <div className="app-shell">
           <Navbar />
 
-          <main className="p-4">
+          <main className="app-main">
             <Routes>
               <Route
                 path="/"
