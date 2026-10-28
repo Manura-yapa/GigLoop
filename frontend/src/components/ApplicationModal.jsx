@@ -104,24 +104,24 @@ export default function ApplicationModal({
     }
   };
 
-  const inputClass =
-    'w-full border border-gray-300 rounded px-3 py-2 ' +
-    'focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'ui-field';
 
   return (
     <dialog
       ref={dialogRef}
       onCancel={handleCancel}
       aria-labelledby="application-title"
-      className="m-auto w-[calc(100%-2rem)] max-w-lg max-h-[90vh] overflow-y-auto rounded-xl bg-white p-6 shadow-xl backdrop:bg-black/50"
+      className="m-auto w-[calc(100%-2rem)] max-w-lg max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl backdrop:bg-slate-900/40 backdrop:backdrop-blur-sm"
     >
       <div className="flex justify-between items-start gap-4 mb-4">
         <div>
-          <h2 id="application-title" className="text-xl font-bold">
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
+            Apply to project
+          </p>
+          <h2 id="application-title" className="text-2xl font-bold text-slate-900 mt-1">
             Submit a proposal
           </h2>
-
-          <p className="text-gray-600 text-sm mt-1">
+          <p className="text-sm font-medium text-slate-600 mt-1">
             {gig.title}
           </p>
         </div>
@@ -131,18 +131,21 @@ export default function ApplicationModal({
           onClick={onClose}
           disabled={submitting}
           aria-label="Close proposal form"
-          className="text-2xl text-gray-500 hover:text-gray-900 disabled:opacity-50"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-900 text-lg disabled:opacity-50"
         >
-          ×
+          ✕
         </button>
       </div>
 
-      <p className="text-sm text-gray-600 mb-5">
-        Listed budget: LKR {Number(gig.budget).toLocaleString()}
-      </p>
+      <div className="rounded-xl bg-slate-50 border border-slate-100 p-3.5 mb-5 flex items-center justify-between">
+        <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Project Budget</span>
+        <span className="font-bold text-emerald-800 text-sm">
+          LKR {Number(gig.budget).toLocaleString()}
+        </span>
+      </div>
 
       {error && (
-        <p role="alert" className="mb-4 text-sm text-red-600">
+        <p role="alert" className="ui-error mb-5">
           {error}
         </p>
       )}
@@ -152,7 +155,7 @@ export default function ApplicationModal({
           <div>
             <label
               htmlFor="bidAmount"
-              className="block text-sm font-medium mb-1"
+              className="block text-sm font-semibold text-slate-700 mb-1"
             >
               Your bid (LKR)
             </label>
@@ -174,7 +177,7 @@ export default function ApplicationModal({
           <div>
             <label
               htmlFor="estimatedDays"
-              className="block text-sm font-medium mb-1"
+              className="block text-sm font-semibold text-slate-700 mb-1"
             >
               Estimated delivery time (days)
             </label>
@@ -195,7 +198,7 @@ export default function ApplicationModal({
           <div>
             <label
               htmlFor="pitch"
-              className="block text-sm font-medium mb-1"
+              className="block text-sm font-semibold text-slate-700 mb-1"
             >
               Proposal
             </label>
@@ -203,32 +206,32 @@ export default function ApplicationModal({
             <textarea
               id="pitch"
               name="pitch"
-              rows={5}
+              rows={4}
               maxLength={2000}
-              placeholder="Explain how you would complete the project and describe your relevant skills."
+              placeholder="Explain how you would complete the project and describe your relevant experience."
               value={formData.pitch}
               onChange={handleChange}
               className={inputClass}
               required
             />
 
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-right text-xs text-slate-400 mt-1">
               {formData.pitch.length}/2000 characters
             </p>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <div className="flex justify-end gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
+              className="ui-button ui-button-secondary"
             >
               Cancel
             </button>
 
             <button
               type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+              className="ui-button ui-button-primary"
               disabled={submitting}
             >
               {submitting ? 'Submitting...' : 'Submit proposal'}

@@ -121,91 +121,107 @@ export default function GigReview({ gigId }) {
   };
 
   return (
-    <section className="space-y-3 border-t pt-4">
-      <h4 className="font-semibold">Your review</h4>
+    <section className="rounded-2xl border border-slate-200 bg-slate-50/60 p-5 space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700">
+          Gig Review
+        </h4>
+        {ownReview && (
+          <span className="ui-badge ui-badge-success">
+            Review submitted
+          </span>
+        )}
+      </div>
 
       {notice && (
-        <p role="status" className="text-sm text-green-700">
+        <p role="status" className="ui-notice">
           {notice}
         </p>
       )}
 
       {loading ? (
-        <p role="status" className="text-sm text-gray-600">
-          Checking reviews...
+        <p role="status" className="text-sm text-slate-500">
+          Checking review status...
         </p>
       ) : loadError ? (
-        <div role="alert" className="text-sm text-red-700">
+        <div role="alert" className="ui-error">
           <p>{loadError}</p>
           <button
             type="button"
             onClick={reloadReviews}
-            className="mt-1 underline"
+            className="mt-1 font-semibold underline"
           >
             Retry
           </button>
         </div>
       ) : ownReview ? (
-        <div className="space-y-2 rounded bg-gray-50 p-3">
-          <p className="text-sm font-medium">
-            Your rating: {ownReview.rating}/5
-          </p>
-          <p className="whitespace-pre-wrap break-words text-sm">
+        <div className="rounded-xl border border-slate-200 bg-white p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sm text-slate-900">Your rating</span>
+            <span className="font-bold text-amber-600 text-sm">
+              ★ {ownReview.rating}/5
+            </span>
+          </div>
+          <p className="whitespace-pre-wrap break-words text-sm text-slate-600 leading-relaxed">
             {ownReview.comment}
           </p>
-          <p className="text-xs text-gray-500">
-            You have already reviewed this gig.
+          <p className="text-xs text-slate-400">
+            You have already submitted a review for this gig.
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <p className="text-sm text-gray-600">
-            Review your experience working with the other participant.
-            Reviews are public and cannot be edited in this version.
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <p className="text-xs text-slate-500">
+            Share your feedback on working together. Reviews are published on participant profiles.
           </p>
 
           {submitError && (
-            <p role="alert" className="text-sm text-red-700">
+            <p role="alert" className="ui-error">
               {submitError}
             </p>
           )}
 
           <fieldset disabled={saving} className="space-y-3">
-            <label className="block text-sm font-medium">
-              Rating
+            <div>
+              <label htmlFor="gig-rating" className="block text-xs font-semibold text-slate-700 mb-1">
+                Rating
+              </label>
               <select
+                id="gig-rating"
                 value={rating}
                 onChange={(event) => setRating(event.target.value)}
-                className="mt-1 block w-full rounded border bg-white p-2"
+                className="ui-field"
               >
-                <option value="5">5 — Excellent</option>
-                <option value="4">4 — Good</option>
-                <option value="3">3 — Average</option>
-                <option value="2">2 — Poor</option>
-                <option value="1">1 — Very poor</option>
+                <option value="5">★ ★ ★ ★ ★ (5 — Excellent)</option>
+                <option value="4">★ ★ ★ ★ ☆ (4 — Good)</option>
+                <option value="3">★ ★ ★ ☆ ☆ (3 — Average)</option>
+                <option value="2">★ ★ ☆ ☆ ☆ (2 — Needs Improvement)</option>
+                <option value="1">★ ☆ ☆ ☆ ☆ (1 — Poor)</option>
               </select>
-            </label>
+            </div>
 
-            <label className="block text-sm font-medium">
-              Comment
+            <div>
+              <label htmlFor="gig-comment" className="block text-xs font-semibold text-slate-700 mb-1">
+                Comment
+              </label>
               <textarea
+                id="gig-comment"
                 required
-                rows={4}
+                rows={3}
                 maxLength={2000}
                 value={comment}
                 onChange={(event) => setComment(event.target.value)}
-                placeholder="Describe your experience working together."
-                className="mt-1 block w-full rounded border p-2"
+                placeholder="Describe the quality of communication, delivery, and overall experience..."
+                className="ui-field"
               />
-            </label>
-
-            <p className="text-right text-xs text-gray-500">
-              {comment.length}/2000
-            </p>
+              <p className="text-right text-xs text-slate-400 mt-1">
+                {comment.length}/2000
+              </p>
+            </div>
 
             <button
               type="submit"
-              className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+              className="ui-button ui-button-primary"
             >
               {saving ? 'Submitting...' : 'Submit review'}
             </button>

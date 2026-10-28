@@ -53,72 +53,79 @@ export default function UserReviews({ userId }) {
       : null;
 
   return (
-    <section className="space-y-4 rounded-lg border bg-white p-5">
+    <section className="ui-card p-6 space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold">Received reviews</h2>
+        <div>
+          <h2 className="text-lg font-bold text-slate-900">Received reviews</h2>
+          <p className="text-xs text-slate-500">Feedback left by project collaborators</p>
+        </div>
 
         <button
           type="button"
           onClick={refresh}
           disabled={loading}
-          className="rounded border px-3 py-1 text-sm hover:bg-gray-50 disabled:opacity-50"
+          className="ui-button ui-button-secondary !min-h-9 !py-1 text-xs"
         >
           Refresh
         </button>
       </div>
 
       {loading ? (
-        <p role="status" className="text-sm text-gray-600">
-          Loading reviews...
+        <p role="status" className="text-sm text-slate-500">
+          Loading received reviews...
         </p>
       ) : error ? (
-        <div role="alert" className="text-sm text-red-700">
+        <div role="alert" className="ui-error">
           <p>{error}</p>
           <button
             type="button"
             onClick={refresh}
-            className="mt-1 underline"
+            className="mt-1 font-semibold underline"
           >
             Retry
           </button>
         </div>
       ) : reviews.length === 0 ? (
-        <p className="text-sm text-gray-600">
-          No reviews yet. Reviews appear after completed gigs.
-        </p>
+        <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">
+          No reviews yet. Completed gigs and mutual feedback will show up here.
+        </div>
       ) : (
         <>
-          <p className="font-medium">
-            <span className="text-yellow-600" aria-hidden="true">
-              ★{' '}
-            </span>
-            {average}/5 · {reviews.length}{' '}
-            {reviews.length === 1 ? 'review' : 'reviews'}
-          </p>
+          <div className="flex items-center gap-3 rounded-xl bg-amber-50/70 border border-amber-200/60 p-3.5">
+            <span className="text-xl text-amber-500" aria-hidden="true">★</span>
+            <div>
+              <p className="text-sm font-bold text-amber-950">
+                {average} out of 5.0
+              </p>
+              <p className="text-xs text-amber-800">
+                Based on {reviews.length} {reviews.length === 1 ? 'verified review' : 'verified reviews'}
+              </p>
+            </div>
+          </div>
 
           <div className="space-y-3">
             {reviews.map((review) => (
               <article
                 key={review._id}
-                className="space-y-2 rounded border bg-gray-50 p-4"
+                className="space-y-2 rounded-xl border border-slate-200 bg-slate-50/50 p-4"
               >
-                <div className="flex flex-wrap justify-between gap-2">
-                  <h3 className="font-semibold">
+                <div className="flex flex-wrap justify-between items-center gap-2">
+                  <h3 className="font-bold text-sm text-slate-900">
                     {review.reviewerId?.name || 'Unavailable account'}
                   </h3>
 
-                  <p className="text-sm font-medium">
-                    {review.rating}/5
-                  </p>
+                  <span className="font-bold text-amber-600 text-xs rounded-lg bg-amber-50 px-2 py-0.5 border border-amber-100">
+                    ★ {review.rating}/5
+                  </span>
                 </div>
 
-                <p className="text-xs text-gray-500">
-                  {review.gigId?.title || 'Gig no longer available'}
+                <p className="text-[11px] font-medium text-slate-400">
+                  {review.gigId?.title || 'Gig listing'}
                   {' · '}
                   {new Date(review.createdAt).toLocaleDateString()}
                 </p>
 
-                <p className="whitespace-pre-wrap break-words text-sm">
+                <p className="whitespace-pre-wrap break-words text-sm text-slate-600 leading-relaxed">
                   {review.comment}
                 </p>
               </article>
