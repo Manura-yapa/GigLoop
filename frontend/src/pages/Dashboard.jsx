@@ -3,11 +3,28 @@ import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import GigReview from '../components/GigReview';
 
-const buttonClass =
-  'rounded bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50';
+const buttonClass = 'ui-button ui-button-primary';
+const secondaryClass = 'ui-button ui-button-secondary';
 
-const secondaryClass =
-  'rounded border border-gray-300 px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50';
+function getStatusBadge(status) {
+  switch (status) {
+    case 'open':
+      return 'ui-badge ui-badge-indigo';
+    case 'in progress':
+      return 'ui-badge ui-badge-warning';
+    case 'completed':
+      return 'ui-badge ui-badge-success';
+    case 'cancelled':
+      return 'ui-badge ui-badge-danger';
+    case 'accepted':
+      return 'ui-badge ui-badge-success';
+    case 'rejected':
+      return 'ui-badge ui-badge-danger';
+    case 'pending':
+    default:
+      return 'ui-badge ui-badge-neutral';
+  }
+}
 
 export default function Dashboard() {
   const [gigs, setGigs] = useState([]);
@@ -181,25 +198,25 @@ export default function Dashboard() {
   const actionsDisabled = busy || loading || proposalLoading;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-5xl space-y-8">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">My dashboard</h1>
-          <p className="text-sm text-gray-600">
-            Manage your gigs and track your proposals.
+          <h1 className="text-3xl font-bold text-slate-900">My activity</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Manage your posted gigs, review incoming proposals, and track your applications.
           </p>
         </div>
 
-        <div className="flex gap-2">
-          <Link to="/post-gig" className={buttonClass}>
-            Post a gig
+        <div className="flex gap-3">
+          <Link to="/post-gig" className="ui-button ui-button-primary">
+            + Post a gig
           </Link>
 
           <button
             type="button"
             onClick={refresh}
             disabled={actionsDisabled}
-            className={secondaryClass}
+            className="ui-button ui-button-secondary"
           >
             Refresh
           </button>
@@ -207,25 +224,19 @@ export default function Dashboard() {
       </header>
 
       {notice && (
-        <p
-          role="status"
-          className="rounded border border-green-200 bg-green-50 p-3 text-green-800"
-        >
+        <p role="status" className="ui-notice">
           {notice}
         </p>
       )}
 
       {error && (
-        <div
-          role="alert"
-          className="rounded border border-red-200 bg-red-50 p-3 text-red-700"
-        >
+        <div role="alert" className="ui-error">
           <p>{error}</p>
           <button
             type="button"
             onClick={refresh}
             disabled={actionsDisabled}
-            className="mt-2 underline"
+            className="mt-2 font-semibold underline"
           >
             Retry
           </button>
@@ -233,52 +244,61 @@ export default function Dashboard() {
       )}
 
       {loading && (
-        <p role="status" className="text-gray-600">
-          Loading dashboard...
-        </p>
+        <div className="ui-card p-8 text-center text-slate-600">
+          Loading your dashboard...
+        </div>
       )}
 
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">My posted gigs</h2>
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">My posted gigs</h2>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {gigs.length} {gigs.length === 1 ? 'gig' : 'gigs'}
+          </span>
+        </div>
 
         {!loading && !error && gigs.length === 0 && (
-          <p className="rounded border bg-white p-4 text-gray-600">
-            You have not posted any gigs yet.
-          </p>
+          <div className="ui-card p-8 text-center text-slate-600">
+            You have not posted any gigs yet.{' '}
+            <Link to="/post-gig" className="font-semibold text-indigo-600 hover:underline">
+              Create your first gig
+            </Link>
+          </div>
         )}
 
         {gigs.map((gig) => (
           <article
             key={gig._id}
-            className="space-y-4 rounded-lg border bg-white p-5"
+            className="ui-card space-y-4 p-5 sm:p-6"
           >
-            <div className="flex flex-wrap justify-between gap-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h3 className="font-semibold">{gig.title}</h3>
-                <p className="text-sm text-gray-600">
-                  {gig.category} · LKR {Number(gig.budget).toLocaleString()}
+                <h3 className="text-xl font-bold text-slate-900">{gig.title}</h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  {gig.category}
                 </p>
               </div>
 
-              <span className="text-sm font-medium capitalize">
-                {gig.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-xl bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-800">
+                  LKR {Number(gig.budget).toLocaleString()}
+                </span>
+                <span className={getStatusBadge(gig.status)}>
+                  {gig.status}
+                </span>
+              </div>
             </div>
 
-            <p className="text-sm text-gray-600">
-              Proposals: {gig.applicationsCount ?? 0}
-            </p>
+            <div className="flex flex-wrap items-center gap-4 text-sm text-slate-600">
+              <span>Proposals received: <strong>{gig.applicationsCount ?? 0}</strong></span>
+              {gig.assignedFreelancer && (
+                <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+                  Assigned: {gig.assignedFreelancer.name || 'Student freelancer'}
+                </span>
+              )}
+            </div>
 
-            {gig.assignedFreelancer && (
-              <p className="text-sm">
-                Assigned freelancer:{' '}
-                <strong>
-                  {gig.assignedFreelancer.name || 'Assigned account'}
-                </strong>
-              </p>
-            )}
-
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 pt-2">
               <button
                 type="button"
                 onClick={() => openProposals(gig._id)}
@@ -287,7 +307,7 @@ export default function Dashboard() {
               >
                 {selectedGigId === gig._id
                   ? 'Hide proposals'
-                  : 'View proposals'}
+                  : `View proposals (${gig.applicationsCount ?? 0})`}
               </button>
 
               {gig.status === 'in progress' && (
@@ -301,15 +321,12 @@ export default function Dashboard() {
                 </button>
               )}
 
-
-
-
               {['open', 'in progress'].includes(gig.status) && (
                 <button
                   type="button"
                   onClick={() => changeGigStatus(gig._id, 'cancelled')}
                   disabled={actionsDisabled}
-                  className={secondaryClass}
+                  className="ui-button ui-button-danger"
                 >
                   Cancel gig
                 </button>
@@ -317,164 +334,184 @@ export default function Dashboard() {
             </div>
 
             {selectedGigId === gig._id && (
-              <div className="space-y-3 border-t pt-4">
-                <h4 className="font-semibold">Submitted proposals</h4>
+              <div className="space-y-3 border-t border-slate-100 pt-5">
+                <h4 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+                  Submitted proposals
+                </h4>
 
                 {proposalLoading ? (
-                  <p role="status">Loading proposals...</p>
+                  <p role="status" className="text-sm text-slate-500">Loading proposals...</p>
                 ) : proposalError ? (
-                  <p role="alert" className="text-red-600">
+                  <p role="alert" className="ui-error text-sm">
                     {proposalError}
                   </p>
                 ) : proposals.length === 0 ? (
-                  <p className="text-sm text-gray-600">
-                    No proposals have been submitted.
+                  <p className="text-sm text-slate-500">
+                    No proposals have been submitted for this gig yet.
                   </p>
                 ) : (
-                  proposals.map((proposal) => (
-                    <div
-                      key={proposal._id}
-                      className="space-y-2 rounded border bg-gray-50 p-4"
-                    >
-                      <div className="flex flex-wrap justify-between gap-2">
-                        <h5 className="font-semibold">
-                          {proposal.applicantId?.name ||
-                            'Unavailable account'}
-                        </h5>
-                        <span className="text-sm capitalize">
-                          {proposal.status}
-                        </span>
-                      </div>
+                  <div className="space-y-3">
+                    {proposals.map((proposal) => (
+                      <div
+                        key={proposal._id}
+                        className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <h5 className="font-bold text-slate-900">
+                              {proposal.applicantId?.name || 'Unavailable account'}
+                            </h5>
+                            <p className="text-xs text-slate-500">
+                              {proposal.applicantId?.faculty || 'Faculty not specified'}
+                            </p>
+                          </div>
 
-                      <p className="text-sm text-gray-600">
-                        {proposal.applicantId?.faculty || 'Faculty not provided'}
-                      </p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-emerald-800 text-sm">
+                              Bid: LKR {Number(proposal.bidAmount).toLocaleString()}
+                            </span>
+                            <span className="text-xs text-slate-500">
+                              ({proposal.estimatedDays} days)
+                            </span>
+                            <span className={getStatusBadge(proposal.status)}>
+                              {proposal.status}
+                            </span>
+                          </div>
+                        </div>
 
-                      <p className="text-sm">
-                        LKR {Number(proposal.bidAmount).toLocaleString()}
-                        {' · '}
-                        {proposal.estimatedDays} days
-                      </p>
-
-                      <p className="whitespace-pre-wrap break-words text-sm">
-                        {proposal.pitch}
-                      </p>
-
-                      {proposal.applicantId?.skills?.length > 0 && (
-                        <p className="text-sm text-gray-600">
-                          Skills: {proposal.applicantId.skills.join(', ')}
+                        <p className="whitespace-pre-wrap break-words text-sm text-slate-700 leading-relaxed">
+                          {proposal.pitch}
                         </p>
-                      )}
 
-                      {gig.status === 'open' &&
-                        proposal.status === 'pending' && (
-                          <div className="flex gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                decideProposal(proposal._id, 'accepted')
-                              }
-                              disabled={
-                                actionsDisabled || !proposal.applicantId
-                              }
-                              className={buttonClass}
-                            >
-                              Accept proposal
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                decideProposal(proposal._id, 'rejected')
-                              }
-                              disabled={actionsDisabled}
-                              className={secondaryClass}
-                            >
-                              Reject
-                            </button>
+                        {proposal.applicantId?.skills?.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 pt-1">
+                            {proposal.applicantId.skills.map((skill, idx) => (
+                              <span key={`${skill}-${idx}`} className="ui-skill text-xs">
+                                {skill}
+                              </span>
+                            ))}
                           </div>
                         )}
-                    </div>
-                  ))
+
+                        {gig.status === 'open' &&
+                          proposal.status === 'pending' && (
+                            <div className="flex gap-2 pt-2 border-t border-slate-200">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  decideProposal(proposal._id, 'accepted')
+                                }
+                                disabled={
+                                  actionsDisabled || !proposal.applicantId
+                                }
+                                className={buttonClass}
+                              >
+                                Accept proposal
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  decideProposal(proposal._id, 'rejected')
+                                }
+                                disabled={actionsDisabled}
+                                className={secondaryClass}
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </div>
             )}
 
             {gig.status === 'completed' && gig.assignedFreelancer && (
+              <div className="border-t border-slate-100 pt-4">
                 <GigReview
-                    key={`${gig._id}-${reloadKey}`}
-                    gigId={gig._id}
+                  key={`${gig._id}-${reloadKey}`}
+                  gigId={gig._id}
                 />
-                )}
-
-
+              </div>
+            )}
           </article>
         ))}
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">My applications</h2>
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold text-slate-900">My applications</h2>
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {applications.length} {applications.length === 1 ? 'application' : 'applications'}
+          </span>
+        </div>
 
         {!loading && !error && applications.length === 0 && (
-          <p className="rounded border bg-white p-4 text-gray-600">
-            You have not submitted any proposals yet.
-          </p>
+          <div className="ui-card p-8 text-center text-slate-600">
+            You have not submitted any proposals yet.{' '}
+            <Link to="/" className="font-semibold text-indigo-600 hover:underline">
+              Explore open gigs
+            </Link>
+          </div>
         )}
 
         {applications.map((application) => (
           <article
             key={application._id}
-            className="space-y-3 rounded-lg border bg-white p-5"
+            className="ui-card space-y-4 p-5 sm:p-6"
           >
-            <div className="flex flex-wrap justify-between gap-2">
-              <h3 className="font-semibold">
-                {application.gigId?.title || 'Gig no longer available'}
-              </h3>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-bold text-slate-900">
+                  {application.gigId?.title || 'Gig no longer available'}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Posted by: {application.gigId?.posterId?.name || 'Unavailable'} · Gig status: <span className="capitalize">{application.gigId?.status || 'N/A'}</span>
+                </p>
+              </div>
 
-              <span className="text-sm font-medium capitalize">
-                Proposal: {application.status}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="rounded-xl bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-800">
+                  Bid: LKR {Number(application.bidAmount).toLocaleString()}
+                </span>
+                <span className={getStatusBadge(application.status)}>
+                  Proposal: {application.status}
+                </span>
+              </div>
             </div>
 
-            <p className="text-sm text-gray-600">
-              Client: {application.gigId?.posterId?.name || 'Unavailable'}
-              {' · '}
-              Gig status: {application.gigId?.status || 'Unavailable'}
+            <p className="text-xs text-slate-500">
+              Estimated delivery: <strong>{application.estimatedDays} days</strong>
             </p>
 
-            <p className="text-sm">
-              Your bid: LKR {Number(application.bidAmount).toLocaleString()}
-              {' · '}
-              {application.estimatedDays} days
-            </p>
-
-            <p className="whitespace-pre-wrap break-words text-sm">
+            <p className="whitespace-pre-wrap break-words text-sm text-slate-600 leading-relaxed">
               {application.pitch}
             </p>
 
             {application.status === 'pending' && (
-              <button
-                type="button"
-                onClick={() => withdrawApplication(application._id)}
-                disabled={actionsDisabled}
-                className={secondaryClass}
-              >
-                Withdraw proposal
-              </button>
-
-                
-
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => withdrawApplication(application._id)}
+                  disabled={actionsDisabled}
+                  className="ui-button ui-button-danger"
+                >
+                  Withdraw proposal
+                </button>
+              </div>
             )}
 
             {application.status === 'accepted' &&
-                application.gigId?.status === 'completed' && (
-                    <GigReview
+              application.gigId?.status === 'completed' && (
+                <div className="border-t border-slate-100 pt-4">
+                  <GigReview
                     key={`${application.gigId._id}-${reloadKey}`}
                     gigId={application.gigId._id}
-                    />
-                )}
-
-
+                  />
+                </div>
+              )}
           </article>
         ))}
       </section>

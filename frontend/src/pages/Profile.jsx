@@ -93,125 +93,133 @@ export default function Profile() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <header>
-        <h1 className="text-2xl font-bold">My profile</h1>
-        <p className="text-sm text-gray-600">
-          Update the details you share with other GigLoop users.
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
+          Account Settings
+        </p>
+        <h1 className="mt-1 text-3xl font-bold text-slate-900">My profile</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Update the details and skills you share with other GigLoop users.
         </p>
       </header>
 
-      <section className="space-y-2 rounded-lg border bg-white p-5">
-        <h2 className="text-lg font-semibold">{user.name}</h2>
+      <section className="ui-card p-6 flex flex-wrap items-center gap-5">
+        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-indigo-100 text-2xl font-bold text-indigo-700">
+          {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
+        </div>
 
-        <p className="text-sm text-gray-600">{user.email}</p>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-xl font-bold text-slate-900">{user.name}</h2>
+          <p className="text-sm text-slate-500">{user.email}</p>
 
-        <p className="text-sm capitalize">
-          Account type: {user.userType}
-        </p>
+          <div className="mt-2.5 flex flex-wrap items-center gap-2">
+            <span className="ui-badge ui-badge-indigo">
+              {user.userType} account
+            </span>
 
-        {isStudent && (
-          <p className="text-sm">
-            Student verification:{' '}
-            {user.isVerifiedStudent ? 'Verified' : 'Not verified'}
-          </p>
-        )}
+            {isStudent && (
+              <span className={user.isVerifiedStudent ? 'ui-badge ui-badge-success' : 'ui-badge ui-badge-neutral'}>
+                {user.isVerifiedStudent ? 'Verified student' : 'Unverified student'}
+              </span>
+            )}
+          </div>
+        </div>
       </section>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 rounded-lg border bg-white p-5"
-      >
-        {error && (
-          <p role="alert" className="rounded bg-red-50 p-3 text-red-700">
-            {error}
-          </p>
-        )}
+      <div className="ui-card ui-form-card">
+        <h3 className="text-lg font-bold text-slate-900 mb-4">
+          Edit profile details
+        </h3>
 
-        {notice && (
-          <p
-            role="status"
-            className="rounded bg-green-50 p-3 text-green-800"
-          >
-            {notice}
-          </p>
-        )}
-
-        <fieldset disabled={saving} className="space-y-4">
-          <div>
-            <label htmlFor="profile-bio" className="mb-1 block font-medium">
-              Bio
-            </label>
-
-            <textarea
-              id="profile-bio"
-              name="bio"
-              rows={5}
-              maxLength={1000}
-              value={form.bio}
-              onChange={handleChange}
-              placeholder="Tell others about your experience and interests."
-              className="w-full rounded border p-3"
-            />
-
-            <p className="text-right text-xs text-gray-500">
-              {form.bio.length}/1000
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {error && (
+            <p role="alert" className="ui-error">
+              {error}
             </p>
-          </div>
+          )}
 
-          <div>
-            <label
-              htmlFor="profile-skills"
-              className="mb-1 block font-medium"
-            >
-              Skills
-            </label>
-
-            <input
-              id="profile-skills"
-              name="skills"
-              value={form.skills}
-              onChange={handleChange}
-              placeholder="React, JavaScript, UI design"
-              aria-describedby="skills-help"
-              className="w-full rounded border p-3"
-            />
-
-            <p id="skills-help" className="mt-1 text-xs text-gray-500">
-              Separate skills with commas. Maximum 20 skills.
+          {notice && (
+            <p role="status" className="ui-notice">
+              {notice}
             </p>
-          </div>
+          )}
 
-          {isStudent && (
+          <fieldset disabled={saving} className="space-y-4">
+            <div>
+              <label htmlFor="profile-bio" className="block text-sm font-semibold text-slate-700 mb-1">
+                Bio
+              </label>
+
+              <textarea
+                id="profile-bio"
+                name="bio"
+                rows={4}
+                maxLength={1000}
+                value={form.bio}
+                onChange={handleChange}
+                placeholder="Tell others about your experience, interests, and what gigs you look for."
+                className="ui-field"
+              />
+
+              <p className="mt-1 text-right text-xs text-slate-400">
+                {form.bio.length}/1000
+              </p>
+            </div>
+
             <div>
               <label
-                htmlFor="profile-faculty"
-                className="mb-1 block font-medium"
+                htmlFor="profile-skills"
+                className="block text-sm font-semibold text-slate-700 mb-1"
               >
-                Faculty
+                Skills
               </label>
 
               <input
-                id="profile-faculty"
-                name="faculty"
-                maxLength={120}
-                value={form.faculty}
+                id="profile-skills"
+                name="skills"
+                value={form.skills}
                 onChange={handleChange}
-                placeholder="Faculty of Engineering"
-                className="w-full rounded border p-3"
+                placeholder="React, JavaScript, UI design"
+                aria-describedby="skills-help"
+                className="ui-field"
               />
+
+              <p id="skills-help" className="mt-1 text-xs text-slate-500">
+                Separate skills with commas. Maximum 20 skills.
+              </p>
             </div>
-          )}
 
-          <button
-            type="submit"
-            className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {saving ? 'Saving...' : 'Save profile'}
-          </button>
-        </fieldset>
-      </form>
+            {isStudent && (
+              <div>
+                <label
+                  htmlFor="profile-faculty"
+                  className="block text-sm font-semibold text-slate-700 mb-1"
+                >
+                  Faculty
+                </label>
 
-        <UserReviews key={user.id} userId={user.id} />
+                <input
+                  id="profile-faculty"
+                  name="faculty"
+                  maxLength={120}
+                  value={form.faculty}
+                  onChange={handleChange}
+                  placeholder="e.g. Faculty of Engineering"
+                  className="ui-field"
+                />
+              </div>
+            )}
 
+            <button
+              type="submit"
+              className="ui-button ui-button-primary"
+            >
+              {saving ? 'Saving...' : 'Save profile'}
+            </button>
+          </fieldset>
+        </form>
+      </div>
+
+      <UserReviews key={user.id} userId={user.id} />
     </div>
   );
 }
