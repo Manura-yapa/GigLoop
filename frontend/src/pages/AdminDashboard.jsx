@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import api from '../utils/api';
 
-const buttonClass =
-  'rounded border px-3 py-2 text-sm hover:bg-gray-100 disabled:opacity-50';
-
-const dangerClass =
-  'rounded border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-50';
+const buttonClass = 'ui-button ui-button-secondary';
+const dangerClass = 'ui-button ui-button-danger';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -176,12 +173,15 @@ export default function AdminDashboard() {
     : [];
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <div className="mx-auto max-w-7xl space-y-8">
+      <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Admin dashboard</h1>
-          <p className="text-sm text-gray-600">
-            Monitor activity and manage accounts and gigs.
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
+            Platform Administration
+          </p>
+          <h1 className="mt-1 text-3xl font-bold text-slate-900">Admin dashboard</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Monitor activity, moderate user accounts, and oversee gig listings.
           </p>
         </div>
 
@@ -189,32 +189,26 @@ export default function AdminDashboard() {
           type="button"
           onClick={refresh}
           disabled={disabled}
-          className={buttonClass}
+          className="ui-button ui-button-secondary"
         >
-          Refresh
+          Refresh data
         </button>
       </header>
 
       {notice && (
-        <p
-          role="status"
-          className="rounded border border-green-200 bg-green-50 p-3 text-green-800"
-        >
+        <p role="status" className="ui-notice">
           {notice}
         </p>
       )}
 
       {error && (
-        <div
-          role="alert"
-          className="rounded border border-red-200 bg-red-50 p-3 text-red-700"
-        >
+        <div role="alert" className="ui-error">
           <p>{error}</p>
           <button
             type="button"
             onClick={refresh}
             disabled={disabled}
-            className="mt-2 underline disabled:opacity-50"
+            className="mt-2 font-semibold underline disabled:opacity-50"
           >
             Reload dashboard
           </button>
@@ -222,44 +216,46 @@ export default function AdminDashboard() {
       )}
 
       {loading ? (
-        <p role="status" className="text-gray-600">
+        <div className="ui-card p-8 text-center text-slate-600">
           Loading admin dashboard...
-        </p>
+        </div>
       ) : stats ? (
         <>
-          <section aria-label="Platform statistics">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <section aria-label="Platform statistics" className="space-y-4">
+            <h2 className="text-lg font-bold text-slate-900">Overview metrics</h2>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               {metrics.map(([label, value]) => (
-                <div key={label} className="rounded-lg border bg-white p-4">
-                  <p className="text-sm text-gray-600">{label}</p>
-                  <p className="mt-1 text-2xl font-semibold">
+                <div key={label} className="ui-card p-4 sm:p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+                  <p className="mt-2 text-2xl font-bold text-slate-900">
                     {Number(value || 0).toLocaleString()}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="mt-3 rounded-lg border bg-white p-4">
-              <p className="text-sm text-gray-600">
+            <div className="ui-card p-5 bg-gradient-to-r from-indigo-900 to-blue-900 text-white">
+              <p className="text-xs font-semibold uppercase tracking-widest text-indigo-200">
                 Total posted gig budgets
               </p>
-              <p className="text-xl font-semibold">
+              <p className="mt-2 text-3xl font-bold text-white">
                 LKR {Number(stats.totalBudgetVolume || 0).toLocaleString()}
               </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Sum of all listed gig budgets, including cancelled gigs.
-                This does not represent payments or revenue.
+              <p className="mt-1 text-xs text-indigo-200">
+                Sum of all listed gig budgets across the campus platform.
               </p>
             </div>
           </section>
 
-          <div className="flex gap-2" aria-label="Dashboard sections">
+          <div className="flex gap-2 border-b border-slate-200 pb-2" aria-label="Dashboard sections">
             <button
               type="button"
               aria-pressed={activeTab === 'users'}
               onClick={() => setActiveTab('users')}
-              className={`${buttonClass} ${
-                activeTab === 'users' ? 'bg-blue-50 font-semibold' : ''
+              className={`ui-button ${
+                activeTab === 'users'
+                  ? 'ui-button-primary'
+                  : 'ui-button-secondary'
               }`}
             >
               Accounts ({users.length})
@@ -269,8 +265,10 @@ export default function AdminDashboard() {
               type="button"
               aria-pressed={activeTab === 'gigs'}
               onClick={() => setActiveTab('gigs')}
-              className={`${buttonClass} ${
-                activeTab === 'gigs' ? 'bg-blue-50 font-semibold' : ''
+              className={`ui-button ${
+                activeTab === 'gigs'
+                  ? 'ui-button-primary'
+                  : 'ui-button-secondary'
               }`}
             >
               Gigs ({gigs.length})
@@ -279,94 +277,100 @@ export default function AdminDashboard() {
 
           {activeTab === 'users' ? (
             <section className="space-y-4">
-              <h2 className="text-xl font-semibold">Account management</h2>
+              <h2 className="text-xl font-bold text-slate-900">Account moderation</h2>
 
-              <div className="flex flex-wrap gap-3">
-                <label className="min-w-0 flex-1 text-sm">
-                  Search accounts
+              <div className="ui-card p-4 sm:p-5 flex flex-wrap gap-4 items-center">
+                <div className="min-w-0 flex-1">
+                  <label htmlFor="admin-search-users" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                    Search accounts
+                  </label>
                   <input
+                    id="admin-search-users"
                     type="search"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Name, email, faculty, or student ID"
-                    className="mt-1 block w-full rounded border bg-white p-2"
+                    placeholder="Search by name, email, faculty, or student ID..."
+                    className="ui-field"
                   />
-                </label>
+                </div>
 
-                <label className="text-sm">
-                  Account type
+                <div className="w-full sm:w-56">
+                  <label htmlFor="admin-filter-type" className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                    Account type
+                  </label>
                   <select
+                    id="admin-filter-type"
                     value={userType}
                     onChange={(event) => setUserType(event.target.value)}
-                    className="mt-1 block rounded border bg-white p-2"
+                    className="ui-field"
                   >
                     <option value="all">All accounts</option>
                     <option value="student">Students</option>
                     <option value="client">Public clients</option>
                     <option value="admin">Administrators</option>
                   </select>
-                </label>
+                </div>
               </div>
 
               {filteredUsers.length === 0 ? (
-                <p className="rounded border bg-white p-4 text-gray-600">
+                <div className="ui-card p-8 text-center text-slate-600">
                   No accounts match these filters.
-                </p>
+                </div>
               ) : (
                 <div className="space-y-3">
                   {filteredUsers.map((account) => (
                     <article
                       key={account._id}
-                      className="space-y-3 rounded-lg border bg-white p-4"
+                      className="ui-card space-y-3 p-5"
                     >
-                      <div className="flex flex-wrap justify-between gap-3">
+                      <div className="flex flex-wrap justify-between items-start gap-3">
                         <div className="min-w-0">
-                          <h3 className="font-semibold">{account.name}</h3>
-                          <p className="break-words text-sm text-gray-600">
+                          <h3 className="text-lg font-bold text-slate-900">{account.name}</h3>
+                          <p className="break-words text-sm text-slate-500">
                             {account.email}
                           </p>
                         </div>
 
-                        <p
-                          className={`text-sm font-medium ${
-                            account.isBanned
-                              ? 'text-red-700'
-                              : 'text-green-700'
-                          }`}
+                        <span
+                          className={account.isBanned ? 'ui-badge ui-badge-danger' : 'ui-badge ui-badge-success'}
                         >
                           {account.isBanned ? 'Suspended' : 'Active'}
-                        </p>
+                        </span>
                       </div>
 
-                      <div className="space-y-1 text-sm text-gray-600">
+                      <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
                         <p className="capitalize">
-                          Account type: {account.userType}
+                          Type: <strong>{account.userType}</strong>
                         </p>
-                        <p>Faculty: {account.faculty || 'Not provided'}</p>
+                        <p>Faculty: <strong>{account.faculty || 'Not provided'}</strong></p>
                         <p>
                           Rating:{' '}
-                          {account.reviewCount > 0
-                            ? `${Number(account.rating).toFixed(1)}/5 (${account.reviewCount} reviews)`
-                            : 'No reviews yet'}
+                          <strong>
+                            {account.reviewCount > 0
+                              ? `${Number(account.rating).toFixed(1)}/5 (${account.reviewCount} reviews)`
+                              : 'No reviews yet'}
+                          </strong>
                         </p>
 
                         {account.userType === 'student' && (
                           <>
                             <p>
-                              Student ID: {account.studentId || 'Not provided'}
+                              Student ID: <strong>{account.studentId || 'Not provided'}</strong>
                             </p>
                             <p>
                               Verification:{' '}
-                              {account.isVerifiedStudent
-                                ? 'Verified'
-                                : 'Not verified'}
+                              <span className={account.isVerifiedStudent ? 'font-semibold text-emerald-700' : 'text-slate-500'}>
+                                {account.isVerifiedStudent
+                                  ? 'Verified'
+                                  : 'Not verified'}
+                              </span>
                             </p>
                           </>
                         )}
                       </div>
 
                       {account.role !== 'admin' && (
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
                           <button
                             type="button"
                             onClick={() => changeSuspension(account)}
@@ -375,7 +379,7 @@ export default function AdminDashboard() {
                               account.isBanned ? buttonClass : dangerClass
                             }
                           >
-                            {account.isBanned ? 'Reactivate' : 'Suspend'}
+                            {account.isBanned ? 'Reactivate account' : 'Suspend account'}
                           </button>
 
                           {account.userType === 'student' && (
@@ -399,77 +403,77 @@ export default function AdminDashboard() {
             </section>
           ) : (
             <section className="space-y-4">
-              <h2 className="text-xl font-semibold">Gig moderation</h2>
+              <h2 className="text-xl font-bold text-slate-900">Gig moderation</h2>
 
               {gigs.length === 0 ? (
-                <p className="rounded border bg-white p-4 text-gray-600">
+                <div className="ui-card p-8 text-center text-slate-600">
                   No gigs have been posted.
-                </p>
+                </div>
               ) : (
-                gigs.map((gig) => (
-                  <article
-                    key={gig._id}
-                    className="space-y-3 rounded-lg border bg-white p-4"
-                  >
-                    <div className="flex flex-wrap justify-between gap-2">
-                      <h3 className="font-semibold">{gig.title}</h3>
-                      <p className="text-sm font-medium capitalize">
-                        {gig.status}
-                      </p>
-                    </div>
+                <div className="space-y-4">
+                  {gigs.map((gig) => (
+                    <article
+                      key={gig._id}
+                      className="ui-card space-y-3 p-5 sm:p-6"
+                    >
+                      <div className="flex flex-wrap justify-between items-start gap-3">
+                        <div>
+                          <h3 className="text-xl font-bold text-slate-900">{gig.title}</h3>
+                          <p className="mt-1 text-sm text-slate-500">
+                            {gig.category} · LKR {Number(gig.budget).toLocaleString()}
+                          </p>
+                        </div>
+                        <span className="ui-badge ui-badge-indigo capitalize">
+                          {gig.status}
+                        </span>
+                      </div>
 
-                    <p className="whitespace-pre-wrap break-words text-sm">
-                      {gig.description}
-                    </p>
-
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <p>
-                        {gig.category} · LKR{' '}
-                        {Number(gig.budget).toLocaleString()}
-                      </p>
-                      <p>
-                        Posted by: {gig.posterId?.name || 'Unavailable account'}
-                      </p>
-                      <p className="break-words">
-                        {gig.posterId?.email || ''}
+                      <p className="whitespace-pre-wrap break-words text-sm text-slate-600 leading-relaxed">
+                        {gig.description}
                       </p>
 
-                      {gig.posterId?.isBanned && (
-                        <p className="text-red-700">
-                          The poster’s account is suspended.
-                        </p>
-                      )}
-
-                      {gig.assignedFreelancer && (
+                      <div className="space-y-1 text-sm text-slate-600 border-t border-slate-100 pt-3">
                         <p>
-                          Assigned freelancer: {gig.assignedFreelancer.name}
+                          Posted by: <strong>{gig.posterId?.name || 'Unavailable account'}</strong> ({gig.posterId?.email || ''})
                         </p>
-                      )}
-                    </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      {['open', 'in progress'].includes(gig.status) && (
+                        {gig.posterId?.isBanned && (
+                          <p className="font-semibold text-rose-600">
+                            Notice: The poster’s account is currently suspended.
+                          </p>
+                        )}
+
+                        {gig.assignedFreelancer && (
+                          <p>
+                            Assigned freelancer: <strong>{gig.assignedFreelancer.name}</strong>
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                        {['open', 'in progress'].includes(gig.status) && (
+                          <button
+                            type="button"
+                            onClick={() => cancelGig(gig)}
+                            disabled={disabled}
+                            className="ui-button ui-button-secondary"
+                          >
+                            Cancel gig
+                          </button>
+                        )}
+
                         <button
                           type="button"
-                          onClick={() => cancelGig(gig)}
+                          onClick={() => deleteGig(gig)}
                           disabled={disabled}
-                          className={buttonClass}
+                          className={dangerClass}
                         >
-                          Cancel gig
+                          Delete gig
                         </button>
-                      )}
-
-                      <button
-                        type="button"
-                        onClick={() => deleteGig(gig)}
-                        disabled={disabled}
-                        className={dangerClass}
-                      >
-                        Delete gig
-                      </button>
-                    </div>
-                  </article>
-                ))
+                      </div>
+                    </article>
+                  ))}
+                </div>
               )}
             </section>
           )}
