@@ -23,6 +23,21 @@ const EMPTY_FILTERS = {
   maxBudget: ''
 };
 
+function getStatusBadge(status) {
+  switch (status) {
+    case 'open':
+      return 'ui-badge ui-badge-indigo';
+    case 'in progress':
+      return 'ui-badge ui-badge-warning';
+    case 'completed':
+      return 'ui-badge ui-badge-success';
+    case 'cancelled':
+      return 'ui-badge ui-badge-danger';
+    default:
+      return 'ui-badge ui-badge-neutral';
+  }
+}
+
 export default function Feed() {
   const { user, isAdmin } = useAuth();
 
@@ -178,31 +193,38 @@ export default function Feed() {
     }
   };
 
-  const inputClass =
-    'w-full border border-gray-300 rounded px-3 py-2 text-sm ' +
-    'focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'ui-field';
 
   return (
-    <div className="max-w-5xl mx-auto mt-6 space-y-6">
-      <div className="flex flex-wrap justify-between items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Explore gigs</h1>
-          <p className="text-sm text-gray-600 mt-1">
-            Find projects by skill, category, status, or budget.
-          </p>
-        </div>
+    <div className="mx-auto max-w-5xl space-y-6">
+      <header className="rounded-3xl bg-gradient-to-br from-indigo-950 via-indigo-900 to-blue-800 p-6 text-white sm:p-8">
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-200">
+          The campus marketplace
+        </p>
 
-        <Link
-          to="/post-gig"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          + Post a gig
-        </Link>
-      </div>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-5">
+          <div className="max-w-xl">
+            <h1 className="text-3xl font-bold sm:text-4xl">
+              Find your next opportunity.
+            </h1>
+            <p className="mt-3 text-sm leading-relaxed text-indigo-100 sm:text-base">
+              Explore projects, share your skills, and connect with people
+              who need your expertise.
+            </p>
+          </div>
+
+          <Link
+            to="/post-gig"
+            className="ui-button bg-white text-indigo-800 hover:bg-indigo-50"
+          >
+            + Post a gig
+          </Link>
+        </div>
+      </header>
 
       <form
         onSubmit={handleSearch}
-        className="bg-white p-5 rounded-lg shadow space-y-4"
+        className="ui-card space-y-5 p-5 sm:p-6"
       >
         <div>
           <label htmlFor="search" className="block text-sm font-medium mb-1">
@@ -320,7 +342,7 @@ export default function Feed() {
         <div className="flex gap-3">
           <button
             type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+            className="ui-button ui-button-primary"
           >
             Search
           </button>
@@ -328,7 +350,7 @@ export default function Feed() {
           <button
             type="button"
             onClick={handleReset}
-            className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-100"
+            className="ui-button ui-button-secondary"
           >
             Reset
           </button>
@@ -336,25 +358,27 @@ export default function Feed() {
       </form>
 
       {loading ? (
-        <p role="status" className="text-gray-600">Loading gigs...</p>
+        <div className="ui-card p-8 text-center text-slate-500">
+          Loading gigs...
+        </div>
       ) : error ? (
-        <div role="alert" className="bg-red-50 p-4 rounded">
-          <p className="text-red-700">{error}</p>
+        <div role="alert" className="ui-error">
+          <p>{error}</p>
           <button
             onClick={() => setAppliedFilters({ ...appliedFilters })}
-            className="mt-2 text-blue-700 underline"
+            className="mt-2 font-semibold underline"
           >
             Retry
           </button>
         </div>
       ) : gigs.length === 0 ? (
-        <div className="bg-white p-8 rounded-lg text-center text-gray-600">
+        <div className="ui-card p-8 text-center text-slate-600">
           No gigs found. Try changing your filters or post a new gig.
         </div>
       ) : (
         <div className="space-y-4">
-          <p className="text-sm text-gray-500">
-            {gigs.length} gig{gigs.length === 1 ? '' : 's'} found
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            {gigs.length} {gigs.length === 1 ? 'project' : 'projects'} available
           </p>
 
           {gigs.map((gig) => {
@@ -374,31 +398,36 @@ export default function Feed() {
             return (
               <article
                 key={gig._id}
-                className="bg-white p-5 rounded-lg shadow border-l-4 border-blue-600"
+                className="ui-card ui-gig-card"
               >
                 <div className="flex flex-wrap justify-between items-start gap-3">
                   <div>
-                    <h2 className="text-lg font-bold">{gig.title}</h2>
-                    <p className="text-sm text-gray-500 mt-1">
+                    <h2 className="text-xl font-bold text-slate-900">{gig.title}</h2>
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mt-1">
                       {gig.category}
                     </p>
                   </div>
 
-                  <span className="font-bold text-green-700">
-                    LKR {Number(gig.budget).toLocaleString()}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-xl bg-emerald-50 px-3 py-1.5 font-bold text-emerald-800 text-sm">
+                      LKR {Number(gig.budget).toLocaleString()}
+                    </span>
+                    <span className={getStatusBadge(gig.status)}>
+                      {gig.status}
+                    </span>
+                  </div>
                 </div>
 
-                <p className="text-gray-700 mt-3 whitespace-pre-wrap">
+                <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-600">
                   {gig.description}
                 </p>
 
                 {(gig.skillsRequired || []).length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     {gig.skillsRequired.map((skill, index) => (
                       <span
                         key={`${skill}-${index}`}
-                        className="bg-blue-50 text-blue-700 px-2 py-1 rounded text-xs"
+                        className="ui-skill"
                       >
                         {skill}
                       </span>
@@ -406,21 +435,16 @@ export default function Feed() {
                   </div>
                 )}
 
-                <div className="flex flex-wrap gap-4 text-xs text-gray-500 mt-4 border-t pt-3">
+                <div className="flex flex-wrap gap-4 text-xs text-slate-500 mt-4 border-t border-slate-100 pt-3">
                   <span>
-                    Posted by: {gig.posterId?.name || 'Unavailable user'}
+                    Posted by: <strong>{gig.posterId?.name || 'Unavailable user'}</strong>
                   </span>
                   <span>
-                    Deadline: {new Date(gig.deadline).toLocaleDateString()}
+                    Deadline: <strong>{new Date(gig.deadline).toLocaleDateString()}</strong>
                   </span>
-                  <span className="capitalize">
-                    Status: {gig.status}
-                  </span>
-
                   <span>
-                    Applications: {gig.applicationsCount ?? 0}
+                    Proposals: <strong>{gig.applicationsCount ?? 0}</strong>
                   </span>
-
                 </div>
 
                 <div className="flex flex-wrap gap-3 mt-4">
@@ -434,7 +458,7 @@ export default function Feed() {
                         setActiveChat(null);
                         setApplyingGig(gig);
                       }}
-                      className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+                      className="ui-button ui-button-primary"
                     >
                       {submittedHere ? 'Proposal submitted' : 'Apply'}
                     </button>
@@ -446,7 +470,7 @@ export default function Feed() {
                     <button
                       type="button"
                       onClick={() => setActiveChat(gig)}
-                      className="rounded bg-blue-50 px-3 py-2 text-sm text-blue-700"
+                      className="ui-button ui-button-secondary"
                     >
                       {isOwner ? 'Student conversations' : 'Discuss privately'}
                     </button>
@@ -459,7 +483,7 @@ export default function Feed() {
                     <button
                       onClick={() => handleDelete(gig)}
                       disabled={deletingId !== null}
-                      className="text-red-600 px-3 py-2 rounded text-sm hover:bg-red-50 disabled:opacity-50"
+                      className="ui-button ui-button-danger"
                     >
                       {deletingId === gig._id ? 'Deleting...' : 'Delete gig'}
                     </button>

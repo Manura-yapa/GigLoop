@@ -82,40 +82,45 @@ export default function PostGig() {
     }
   };
 
-  const inputClass =
-    'w-full border border-gray-300 rounded px-3 py-2 ' +
-    'focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'ui-field';
 
   return (
-    <div className="max-w-2xl mx-auto mt-6 bg-white p-6 sm:p-8 rounded-lg shadow">
-      <h1 className="text-2xl font-bold mb-2">Post a new gig</h1>
-
-      <p className="text-gray-600 text-sm mb-6">
-        Describe your project, budget, deadline, and required skills.
-      </p>
+    <div className="ui-card ui-form-card mx-auto my-6 max-w-2xl">
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
+          Create a listing
+        </p>
+        <h1 className="mt-1 text-3xl font-bold text-slate-900">
+          Post a new gig
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Describe your project, budget, deadline, and skills required to find the right student talent.
+        </p>
+      </div>
 
       {user.userType === 'student' &&
         user.activeRole !== 'customer' && (
-          <p className="mb-5 rounded bg-blue-50 p-3 text-sm text-blue-800">
-            Posting this gig will switch your account to customer mode.
-          </p>
+          <div className="ui-notice mb-5">
+            Posting this gig will automatically switch your account to customer mode.
+          </div>
         )}
 
       {error && (
-        <p role="alert" className="mb-4 text-red-600">
+        <p role="alert" className="ui-error mb-5">
           {error}
         </p>
       )}
 
       <form onSubmit={handleSubmit}>
-        <fieldset disabled={submitting} className="space-y-4">
+        <fieldset disabled={submitting} className="space-y-5">
           <div>
-            <label htmlFor="title" className="block font-medium mb-1">
+            <label htmlFor="title" className="block text-sm font-semibold text-slate-700 mb-1">
               Project title
             </label>
             <input
               id="title"
               name="title"
+              placeholder="e.g. Build a React landing page for student club"
               value={formData.title}
               onChange={handleChange}
               className={inputClass}
@@ -124,13 +129,14 @@ export default function PostGig() {
           </div>
 
           <div>
-            <label htmlFor="description" className="block font-medium mb-1">
+            <label htmlFor="description" className="block text-sm font-semibold text-slate-700 mb-1">
               Description
             </label>
             <textarea
               id="description"
               name="description"
               rows={5}
+              placeholder="Provide a clear description of the tasks, requirements, and deliverables..."
               value={formData.description}
               onChange={handleChange}
               className={inputClass}
@@ -139,7 +145,7 @@ export default function PostGig() {
           </div>
 
           <div>
-            <label htmlFor="category" className="block font-medium mb-1">
+            <label htmlFor="category" className="block text-sm font-semibold text-slate-700 mb-1">
               Category
             </label>
             <select
@@ -159,7 +165,7 @@ export default function PostGig() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label htmlFor="budget" className="block font-medium mb-1">
+              <label htmlFor="budget" className="block text-sm font-semibold text-slate-700 mb-1">
                 Budget (LKR)
               </label>
               <input
@@ -168,6 +174,7 @@ export default function PostGig() {
                 type="number"
                 min="0.01"
                 step="0.01"
+                placeholder="5000"
                 value={formData.budget}
                 onChange={handleChange}
                 className={inputClass}
@@ -176,7 +183,7 @@ export default function PostGig() {
             </div>
 
             <div>
-              <label htmlFor="deadline" className="block font-medium mb-1">
+              <label htmlFor="deadline" className="block text-sm font-semibold text-slate-700 mb-1">
                 Deadline
               </label>
               <input
@@ -192,7 +199,7 @@ export default function PostGig() {
           </div>
 
           <div>
-            <label htmlFor="skillsRequired" className="block font-medium mb-1">
+            <label htmlFor="skillsRequired" className="block text-sm font-semibold text-slate-700 mb-1">
               Required skills (optional)
             </label>
             <input
@@ -203,7 +210,7 @@ export default function PostGig() {
               onChange={handleChange}
               className={inputClass}
             />
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-slate-500 mt-1">
               Separate skills with commas. Maximum 20 skills.
             </p>
           </div>
@@ -211,9 +218,9 @@ export default function PostGig() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="ui-button ui-button-primary w-full mt-2"
           >
-            {submitting ? 'Posting...' : 'Post gig'}
+            {submitting ? 'Posting gig...' : 'Post gig'}
           </button>
         </fieldset>
       </form>
