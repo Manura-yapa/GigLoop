@@ -110,24 +110,26 @@ export default function Register() {
     }
   };
 
-  const inputClass =
-    'w-full border border-gray-300 rounded px-3 py-2 ' +
-    'focus:outline-none focus:ring-2 focus:ring-blue-500';
+  const inputClass = 'ui-field';
 
   if (success) {
     return (
-      <div className="max-w-lg mx-auto mt-10 bg-white p-8 rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-4">
+      <div className="ui-card ui-form-card mx-auto my-6 max-w-lg text-center">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-xl font-bold text-emerald-600">
+          ✓
+        </div>
+
+        <h1 className="text-2xl font-bold text-slate-900 mb-2">
           Account created
         </h1>
 
-        <p role="status" className="text-green-700 mb-6">
+        <p role="status" className="ui-notice mb-6">
           {success}
         </p>
 
         <Link
           to="/login"
-          className="inline-block bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
+          className="ui-button ui-button-primary w-full"
         >
           Continue to login
         </Link>
@@ -136,27 +138,31 @@ export default function Register() {
   }
 
   return (
-    <div className="max-w-lg mx-auto mt-10 bg-white p-6 sm:p-8 rounded-lg shadow">
-      <h1 className="text-2xl font-bold text-center">
-        Create your GigLoop account
-      </h1>
-
-      <p className="text-sm text-gray-600 text-center mt-2 mb-6">
-        Join as a student freelancer or a client hiring students.
-      </p>
+    <div className="ui-card ui-form-card mx-auto my-6 max-w-xl">
+      <div className="mb-6 text-center">
+        <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">
+          Join GigLoop
+        </p>
+        <h1 className="mt-2 text-3xl font-bold text-slate-900">
+          Create your account
+        </h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Join as a student freelancer or a client hiring students.
+        </p>
+      </div>
 
       <form onSubmit={handleSubmit}>
         <fieldset disabled={submitting} className="space-y-4">
-          <legend className="font-semibold mb-3">
+          <legend className="block text-sm font-semibold text-slate-700 mb-2">
             Account type
           </legend>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <label
-              className={`border rounded-lg p-3 cursor-pointer ${
+              className={`rounded-xl border p-4 text-sm font-semibold cursor-pointer transition-colors ${
                 isStudent
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-300'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
               <input
@@ -167,14 +173,14 @@ export default function Register() {
                 onChange={() => handleTypeChange('student')}
                 className="mr-2"
               />
-              Student
+              Student freelancer
             </label>
 
             <label
-              className={`border rounded-lg p-3 cursor-pointer ${
+              className={`rounded-xl border p-4 text-sm font-semibold cursor-pointer transition-colors ${
                 !isStudent
-                  ? 'border-blue-600 bg-blue-50'
-                  : 'border-gray-300'
+                  ? 'border-indigo-600 bg-indigo-50 text-indigo-800'
+                  : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
               }`}
             >
               <input
@@ -189,21 +195,21 @@ export default function Register() {
             </label>
           </div>
 
-          <p className="text-sm text-gray-600">
+          <p className="text-xs text-slate-500">
             {isStudent
-              ? 'Use your Ruhuna email. You can switch between freelancer and customer modes.'
-              : 'Use your regular email to create a customer account and hire students.'}
+              ? 'Use your Ruhuna email. You can freely switch between freelancer and customer modes.'
+              : 'Use your regular email to create a client account and post projects for students.'}
           </p>
 
           {error && (
-            <p role="alert" className="text-red-600 text-sm">
+            <p role="alert" className="ui-error">
               {error}
             </p>
           )}
 
           <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">
-              {isStudent ? 'Full name' : 'Name or company name'}
+            <label htmlFor="name" className="block text-sm font-semibold text-slate-700 mb-1">
+              {isStudent ? 'Full name' : 'Name or organization name'}
             </label>
             <input
               id="name"
@@ -217,7 +223,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">
+            <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-1">
               {isStudent ? 'University email' : 'Email address'}
             </label>
             <input
@@ -238,7 +244,7 @@ export default function Register() {
           {isStudent && (
             <>
               <div>
-                <label htmlFor="faculty" className="block text-sm font-medium mb-1">
+                <label htmlFor="faculty" className="block text-sm font-semibold text-slate-700 mb-1">
                   Faculty (optional)
                 </label>
                 <input
@@ -253,7 +259,7 @@ export default function Register() {
               </div>
 
               <div>
-                <label htmlFor="studentId" className="block text-sm font-medium mb-1">
+                <label htmlFor="studentId" className="block text-sm font-semibold text-slate-700 mb-1">
                   Student ID (optional)
                 </label>
                 <input
@@ -267,7 +273,7 @@ export default function Register() {
               </div>
 
               <div>
-                <label htmlFor="skills" className="block text-sm font-medium mb-1">
+                <label htmlFor="skills" className="block text-sm font-semibold text-slate-700 mb-1">
                   Skills (optional)
                 </label>
                 <input
@@ -278,19 +284,19 @@ export default function Register() {
                   onChange={handleChange}
                   className={inputClass}
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   Separate skills with commas. Maximum 20 skills.
                 </p>
               </div>
 
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-500">
                 Registering does not automatically verify your student status.
               </p>
             </>
           )}
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium mb-1">
+            <label htmlFor="password" className="block text-sm font-semibold text-slate-700 mb-1">
               Password
             </label>
             <input
@@ -307,7 +313,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
+            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-slate-700 mb-1">
               Confirm password
             </label>
             <input
@@ -325,7 +331,7 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+            className="ui-button ui-button-primary w-full mt-2"
             disabled={submitting}
           >
             {submitting ? 'Creating account...' : 'Create account'}
@@ -333,9 +339,9 @@ export default function Register() {
         </fieldset>
       </form>
 
-      <p className="text-center text-sm text-gray-600 mt-5">
+      <p className="mt-6 text-center text-sm text-slate-600">
         Already registered?{' '}
-        <Link to="/login" className="text-blue-600 hover:underline">
+        <Link to="/login" className="font-semibold text-indigo-700 hover:underline">
           Log in
         </Link>
       </p>
