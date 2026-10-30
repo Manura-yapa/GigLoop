@@ -5,6 +5,7 @@ import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import Chat from '../components/Chat';
 import ApplicationModal from '../components/ApplicationModal';
+import EditGigModal from '../components/EditGigModal';
 
 const CATEGORIES = [
   'Web & App Dev',
@@ -20,7 +21,8 @@ const EMPTY_FILTERS = {
   category: '',
   status: '',
   minBudget: '',
-  maxBudget: ''
+  maxBudget: '',
+  sortBy: 'newest'
 };
 
 function getStatusBadge(status) {
@@ -57,6 +59,7 @@ export default function Feed() {
     ...EMPTY_FILTERS
   });
 
+  const [editingGig, setEditingGig] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [activeChat, setActiveChat] = useState(null);
   // const [socket] = useState(() =>
@@ -140,6 +143,13 @@ export default function Feed() {
       ...previous,
       [name]: value
     }));
+
+    if (name === 'sortBy') {
+      setAppliedFilters((previous) => ({
+        ...previous,
+        sortBy: value
+      }));
+    }
   };
 
   const handleSearch = (event) => {
@@ -241,7 +251,7 @@ export default function Feed() {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
           <div>
             <label htmlFor="category" className="block text-sm font-medium mb-1">
               Category
@@ -311,6 +321,25 @@ export default function Feed() {
               onChange={handleFilterChange}
               className={inputClass}
             />
+          </div>
+
+          <div>
+            <label htmlFor="sortBy" className="block text-sm font-medium mb-1">
+              Sort by
+            </label>
+            <select
+              id="sortBy"
+              name="sortBy"
+              value={draftFilters.sortBy}
+              onChange={handleFilterChange}
+              className={inputClass}
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="budget_asc">Budget: Low to High</option>
+              <option value="budget_desc">Budget: High to Low</option>
+              <option value="deadline">Deadline: Soonest</option>
+            </select>
           </div>
         </div>
 
@@ -466,6 +495,16 @@ export default function Feed() {
 
 
 
+                  {isOwner && ['open', 'in progress'].includes(gig.status) && (
+                    <button
+                      type="button"
+                      onClick={() => setEditingGig(gig)}
+                      className="ui-button ui-button-secondary"
+                    >
+                      Edit gig
+                    </button>
+                  )}
+
                   {canDiscuss && (
                     <button
                       type="button"
@@ -514,12 +553,24 @@ export default function Feed() {
         )}
 
       {activeChat && (
-      <Chat
-        key={activeChat._id}
-        gig={activeChat}
-        onClose={() => setActiveChat(null)}
-      />
-)}
+        <Chat
+          key={activeChat._id}
+          gig={activeChat}
+          onClose={() => setActiveChat(null)}
+        />
+      )}
+
+      {editingGig && (
+        <EditGigModal
+          gig={editingGig}
+          onClose={() => setEditingGig(null)}
+          onUpdated={() => {
+            setEditingGig(null);
+            setApplicationNotice('Gig updated successfully.');
+            setAppliedFilters((previous) => ({ ...previous }));
+          }}
+        />
+      )}
     </div>
   );
 }
