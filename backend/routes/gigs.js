@@ -143,10 +143,11 @@ router.get('/all', async (req, res) => {
       search,
       minBudget,
       maxBudget,
-      status
+      status,
+      sortBy
     } = req.query;
 
-    const filters = { category, search, minBudget, maxBudget, status };
+    const filters = { category, search, minBudget, maxBudget, status, sortBy };
 
     for (const value of Object.values(filters)) {
       if (value !== undefined && typeof value !== 'string') {
@@ -160,6 +161,7 @@ router.get('/all', async (req, res) => {
     const categoryText = category?.trim();
     const searchText = search?.trim();
     const statusText = status?.trim();
+    const sortText = sortBy?.trim();
 
     if (categoryText && categoryText.toLowerCase() !== 'all') {
       query.category = categoryText;
@@ -220,8 +222,19 @@ router.get('/all', async (req, res) => {
       if (hasMax) query.budget.$lte = maximum;
     }
 
+    let sortOption = { createdAt: -1 };
+    if (sortText === 'oldest') {
+      sortOption = { createdAt: 1 };
+    } else if (sortText === 'budget_asc') {
+      sortOption = { budget: 1 };
+    } else if (sortText === 'budget_desc') {
+      sortOption = { budget: -1 };
+    } else if (sortText === 'deadline') {
+      sortOption = { deadline: 1 };
+    }
+
     const gigs = await Gig.find(query)
-      .sort({ createdAt: -1 })
+      .sort(sortOption)
       .populate('posterId', POSTER_FIELDS)
       .populate('assignedFreelancer', FREELANCER_FIELDS);
 
@@ -272,6 +285,161 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       error: 'Failed to fetch gig details.'
+    });
+  }
+});
+
+// Update gig details (CRUD: Edit existing record).
+router.put('/:id', auth, async (req, res) => {
+  if (!validId(req.params.id)) {
+    return res.status(400).json({
+      error: 'Invalid gig ID.'
+    });
+  }
+
+  try {
+    const gig = await Gig.findById(req.params.id);
+
+    if (!gig) {
+      return res.status(404).json({
+        error: 'Gig not found.'
+      });
+    }
+
+    const isOwner = gig.posterId.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({
+        error: 'Not authorized to edit this gig.'
+      });
+    }
+
+    if (['completed', 'cancelled'].includes(gig.status)) {
+      return res.status(400).json({
+        error: `Cannot edit a gig that has already been ${gig.status}.`
+      });
+    }
+
+    const {
+      title,
+      description,
+      category,
+      budget,
+      deadline,
+      skillsRequired
+    } = req.body || {};
+
+    const updates = {};
+
+    if (title !== undefined) {
+      if (typeof title !== 'string' || !title.trim()) {
+        return res.status(400).json({
+          error: 'Title is required and must be text.'
+        });
+      }
+      updates.title = title.trim();
+    }
+
+    if (description !== undefined) {
+      if (typeof description !== 'string' || !description.trim()) {
+        return res.status(400).json({
+          error: 'Description is required and must be text.'
+        });
+      }
+      updates.description = description.trim();
+    }
+
+    if (category !== undefined) {
+      if (typeof category !== 'string' || !category.trim()) {
+        return res.status(400).json({
+          error: 'Category is required and must be text.'
+        });
+      }
+      updates.category = category.trim();
+    }
+
+    if (budget !== undefined) {
+      const numericBudget = parseNumber(budget);
+
+      if (!Number.isFinite(numericBudget) || numericBudget <= 0) {
+        return res.status(400).json({
+          error: 'Budget must be a positive number.'
+        });
+      }
+      updates.budget = numericBudget;
+    }
+
+    if (deadline !== undefined) {
+      if (typeof deadline !== 'string' || !deadline.trim()) {
+        return res.status(400).json({
+          error: 'A valid deadline is required.'
+        });
+      }
+
+      const parsedDeadline = new Date(deadline);
+
+      if (Number.isNaN(parsedDeadline.getTime())) {
+        return res.status(400).json({
+          error: 'Deadline must be a valid date.'
+        });
+      }
+      updates.deadline = parsedDeadline;
+    }
+
+    if (skillsRequired !== undefined) {
+      let skills = [];
+
+      if (typeof skillsRequired === 'string') {
+        skills = skillsRequired.split(',');
+      } else if (
+        Array.isArray(skillsRequired) &&
+        skillsRequired.every((skill) => typeof skill === 'string')
+      ) {
+        skills = skillsRequired;
+      } else {
+        return res.status(400).json({
+          error: 'Required skills must be text or an array of strings.'
+        });
+      }
+
+      skills = [
+        ...new Set(skills.map((skill) => skill.trim()).filter(Boolean))
+      ];
+
+      if (
+        skills.length > 20 ||
+        skills.some((skill) => skill.length > 50)
+      ) {
+        return res.status(400).json({
+          error: 'Use at most 20 skills, each at most 50 characters.'
+        });
+      }
+
+      updates.skillsRequired = skills;
+    }
+
+    const updatedGig = await Gig.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    )
+      .populate('posterId', POSTER_FIELDS)
+      .populate('assignedFreelancer', FREELANCER_FIELDS);
+
+    return res.json({
+      message: 'Gig updated successfully.',
+      gig: updatedGig
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({
+        error: 'Please check the updated gig details.'
+      });
+    }
+
+    return res.status(500).json({
+      error: 'Server error while updating the gig.'
     });
   }
 });

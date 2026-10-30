@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../utils/api';
 import GigReview from '../components/GigReview';
+import EditGigModal from '../components/EditGigModal';
 
 const buttonClass = 'ui-button ui-button-primary';
 const secondaryClass = 'ui-button ui-button-secondary';
@@ -31,6 +32,7 @@ export default function Dashboard() {
   const [applications, setApplications] = useState([]);
   const [selectedGigId, setSelectedGigId] = useState('');
   const [proposals, setProposals] = useState([]);
+  const [editingGig, setEditingGig] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [proposalLoading, setProposalLoading] = useState(false);
@@ -186,6 +188,20 @@ export default function Dashboard() {
     );
   };
 
+  const deleteGig = (gig) => {
+    if (
+      !window.confirm(
+        `Permanently delete "${gig.title}" and any associated proposals? This action cannot be undone.`
+      )
+    )
+      return;
+
+    runAction(
+      () => api.delete(`/gigs/${gig._id}`),
+      'Gig deleted successfully.'
+    );
+  };
+
   const withdrawApplication = (applicationId) => {
     if (!window.confirm('Withdraw this pending proposal?')) return;
 
@@ -310,6 +326,17 @@ export default function Dashboard() {
                   : `View proposals (${gig.applicationsCount ?? 0})`}
               </button>
 
+              {['open', 'in progress'].includes(gig.status) && (
+                <button
+                  type="button"
+                  onClick={() => setEditingGig(gig)}
+                  disabled={actionsDisabled}
+                  className="ui-button ui-button-secondary"
+                >
+                  Edit gig
+                </button>
+              )}
+
               {gig.status === 'in progress' && (
                 <button
                   type="button"
@@ -331,6 +358,15 @@ export default function Dashboard() {
                   Cancel gig
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => deleteGig(gig)}
+                disabled={actionsDisabled}
+                className="ui-button ui-button-danger"
+              >
+                Delete gig
+              </button>
             </div>
 
             {selectedGigId === gig._id && (
@@ -515,6 +551,18 @@ export default function Dashboard() {
           </article>
         ))}
       </section>
+
+      {editingGig && (
+        <EditGigModal
+          gig={editingGig}
+          onClose={() => setEditingGig(null)}
+          onUpdated={() => {
+            setEditingGig(null);
+            setNotice('Gig updated successfully.');
+            refresh();
+          }}
+        />
+      )}
     </div>
   );
 }
